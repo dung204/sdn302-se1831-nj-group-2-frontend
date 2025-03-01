@@ -7,9 +7,10 @@ import { type ComponentProps, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { Role, type SuccessResponse } from '@/common/types';
+import { type SuccessResponse } from '@/common/types';
 import {
   type CreateUserSchema,
+  Role,
   type UpdateUserSchema,
   type User,
   createUserSchema,
@@ -222,7 +223,7 @@ function UserUpdateDialog({
       firstName: !user ? '' : user.firstName,
       lastName: !user ? '' : user.lastName,
       address: !user ? '' : user.address,
-      role: !user ? Role.USER : user.role,
+      role: !user ? Role.GUEST : user.role,
     },
   });
 
@@ -278,7 +279,7 @@ function UserCreateDialog({
       firstName: '',
       lastName: '',
       address: '',
-      role: Role.USER,
+      role: Role.GUEST,
     },
   });
 

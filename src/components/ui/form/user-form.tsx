@@ -1,8 +1,7 @@
 import type { PropsWithChildren } from 'react';
 import { type UseFormHandleSubmit, type UseFormReturn } from 'react-hook-form';
 
-import { Role } from '@/common/types';
-import type { User } from '@/common/types/api/user';
+import { Role, type User } from '@/common/types/api/user';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -99,8 +98,11 @@ export function UserForm<
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value={Role.ADMIN}>{Role.ADMIN}</SelectItem>
-                  <SelectItem value={Role.USER}>{Role.USER}</SelectItem>
+                  {Object.values(Role).map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {role}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <FormMessage />

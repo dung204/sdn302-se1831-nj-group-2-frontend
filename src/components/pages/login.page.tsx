@@ -1,7 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
 
+import { localStorageService } from '@/common/services';
+import { LocalStorageKey } from '@/common/types';
 import { type LoginSchema, loginSchema } from '@/common/types/api/auth';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,9 +23,11 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { LoadingIndicator } from '@/components/ui/loading-indicator';
 import { PasswordInput } from '@/components/ui/password-input';
 import { ThemeToggler } from '@/components/ui/theme-toggler';
 import { cn } from '@/lib/cn';
+import { authHttpClient } from '@/lib/http';
 
 export function LoginPage() {
   return (
@@ -46,13 +51,25 @@ function LoginForm({
   const form = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
     },
   });
 
-  const onSubmit = async () => {
-    navigate({ to: '/' });
+  const { mutateAsync: triggerLogin, isPending } = useMutation({
+    mutationFn: (payload: LoginSchema) => authHttpClient.login(payload),
+  });
+
+  const onSubmit = async (payload: LoginSchema) => {
+    const { data } = await triggerLogin(payload);
+
+    if (data) {
+      const { accessToken, refreshToken } = data;
+      localStorageService.set(LocalStorageKey.ACCESS_TOKEN, accessToken);
+      localStorageService.set(LocalStorageKey.REFRESH_TOKEN, refreshToken);
+      navigate({ to: '/' });
+      return;
+    }
   };
 
   return (
@@ -70,12 +87,12 @@ function LoginForm({
               <div className="flex flex-col gap-6">
                 <FormField
                   control={form.control}
-                  name="email"
+                  name="username"
                   render={({ field }) => (
                     <FormItem className="grid gap-2">
-                      <FormLabel required>Email</FormLabel>
+                      <FormLabel required>Username</FormLabel>
                       <FormControl>
-                        <Input placeholder="m@example.com" {...field} />
+                        <Input disabled={isPending} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -88,14 +105,18 @@ function LoginForm({
                     <FormItem className="grid gap-2">
                       <FormLabel required>Password</FormLabel>
                       <FormControl>
-                        <PasswordInput id="password" {...field} />
+                        <PasswordInput
+                          id="password"
+                          disabled={isPending}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full">
-                  Login
+                <Button type="submit" disabled={isPending} className="w-full">
+                  {isPending ? <LoadingIndicator /> : 'Login'}
                 </Button>
               </div>
             </form>

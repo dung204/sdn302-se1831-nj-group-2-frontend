@@ -1,8 +1,10 @@
-import type { SuccessResponse } from '@/common/types';
-import type { User } from '@/common/types/api/user';
+import type { CommonSearchParams, SuccessResponse } from '@/common/types';
+import type {
+  CreateUserSchema,
+  UpdateUserSchema,
+  User,
+} from '@/common/types/api/user';
 import { HttpClient } from '@/lib/http/core.http';
-import type { CreateUserSchema, UpdateUserSchema } from '@/lib/validators';
-import type { CommonSearchParams } from '@/lib/validators/common-search-params.validator';
 
 class UserHttpClient extends HttpClient {
   constructor() {

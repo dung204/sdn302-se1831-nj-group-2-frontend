@@ -50,6 +50,13 @@ export default tseslint.config(
           message: 'Use named exports instead (i.e. export const foo = ...)',
         },
       ],
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          caughtErrors: 'none',
+        },
+      ],
     },
   },
 );

@@ -1,7 +1,10 @@
-import { Link, useLocation } from '@tanstack/react-router';
+import { useMutation } from '@tanstack/react-query';
+import { useLocation, useNavigate } from '@tanstack/react-router';
 import { LogOut, User } from 'lucide-react';
 import { Fragment } from 'react';
 
+import { localStorageService } from '@/common/services';
+import { LocalStorageKey } from '@/common/types';
 import { getBreadcrumbItems } from '@/common/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
@@ -20,6 +23,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { ThemeToggler } from '@/components/ui/theme-toggler';
+import { authHttpClient } from '@/lib/http';
 
 export function HeaderLayout() {
   const location = useLocation();
@@ -53,6 +57,22 @@ export function HeaderLayout() {
 }
 
 function UserMenu() {
+  const navigate = useNavigate();
+
+  const { mutateAsync: triggerLogout, isError } = useMutation({
+    mutationFn: () => authHttpClient.logout(),
+  });
+
+  const handleLogout = async () => {
+    await triggerLogout();
+
+    if (!isError) {
+      localStorageService.remove(LocalStorageKey.ACCESS_TOKEN);
+      localStorageService.remove(LocalStorageKey.REFRESH_TOKEN);
+      navigate({ to: '/login' });
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger>
@@ -66,11 +86,9 @@ function UserMenu() {
         align="end"
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
-        <Link to="/login">
-          <DropdownMenuItem className="cursor-pointer">
-            <LogOut className="size-4" /> Log out
-          </DropdownMenuItem>
-        </Link>
+        <DropdownMenuItem className="cursor-pointer" onSelect={handleLogout}>
+          <LogOut className="size-4" /> Log out
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
