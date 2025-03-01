@@ -98,9 +98,9 @@ export class HttpClient {
     }
 
     if (error.status === HttpStatusCode.Unauthorized) {
-      console.log(error.config?.url);
-
       if (window.location.pathname !== '/login') {
+        localStorageService.remove(LocalStorageKey.ACCESS_TOKEN);
+        localStorageService.remove(LocalStorageKey.REFRESH_TOKEN);
         window.location.replace('/login');
       }
     }

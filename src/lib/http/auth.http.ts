@@ -16,6 +16,13 @@ class AuthHttpClient extends HttpClient {
     );
   }
 
+  public refresh(refreshToken: string) {
+    return this.post<SuccessResponse<LoginSuccessPayload>>(
+      '/auth/refresh-token',
+      { refreshToken },
+    );
+  }
+
   public logout() {
     return this.delete<void>('/auth/logout', { isPrivateRoute: true });
   }
