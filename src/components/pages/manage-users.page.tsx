@@ -50,7 +50,7 @@ export function ManageUsersPage() {
   const searchParams = userSearchParamsSchema.parse(route.useSearch());
 
   const { data: res, isLoading } = useQuery({
-    queryKey: ['users', searchParams],
+    queryKey: ['users', 'all', searchParams],
     queryFn: () => userHttpClient.getAllUsers(searchParams),
   });
 
@@ -132,12 +132,10 @@ export function ManageUsersPage() {
         user={userToUpdate!}
         open={isUpdateDialogOpen}
         onOpenChange={setIsUpdateDialogOpen}
-        onSuccessUpdate={() => setIsUpdateDialogOpen(false)}
       />
       <UserCreateDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
-        onSuccessCreate={() => setIsCreateDialogOpen(false)}
       />
     </div>
   );
@@ -157,32 +155,38 @@ function UserDeleteDialog({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { mutateAsync: triggerDeleteUser } = useMutation({
-    mutationFn: (id: string) => userHttpClient.softDeleteUser(id),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['users'] });
+  const { mutateAsync: triggerDeleteUsers, isPending } = useMutation({
+    mutationFn: async (userIds: string[]) => {
+      const result = await Promise.allSettled(
+        userIds.map((id) => userHttpClient.softDeleteUser(id)),
+      );
+      return Object.groupBy(result, (r) => r.status);
+    },
+    onSuccess: async ({ fulfilled, rejected }) => {
+      await queryClient.invalidateQueries({ queryKey: ['users', 'all'] });
       const res = queryClient.getQueryData<SuccessResponse<User[]>>([
         'users',
+        'all',
         searchParams,
       ]);
-      if (res!.meta.pagination.page > res!.meta.pagination.totalPage) {
+      if (
+        res!.meta.pagination.page > res!.meta.pagination.totalPage &&
+        res!.meta.pagination.totalPage > 0
+      ) {
         navigate({
           to: '/users',
           search: { ...searchParams, page: res!.meta.pagination.totalPage },
         });
       }
+      toast.info(
+        `Result: ${fulfilled?.length || 0} deleted, ${rejected?.length || 0} failed`,
+      );
+      onDelete?.(userIds);
     },
   });
 
   const handleDelete = async () => {
-    const result = await Promise.allSettled(
-      userIds.map((id) => triggerDeleteUser(id)),
-    );
-    const { fulfilled, rejected } = Object.groupBy(result, (r) => r.status);
-    toast.info(
-      `Result: ${fulfilled?.length || 0} deleted, ${rejected?.length || 0} failed`,
-    );
-    onDelete?.(userIds);
+    await triggerDeleteUsers(userIds);
   };
 
   return (
@@ -196,8 +200,12 @@ function UserDeleteDialog({
           </AlertDialogTitle>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction variant="danger" onClick={handleDelete}>
+          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            variant="danger"
+            disabled={isPending}
+            onClick={handleDelete}
+          >
             Delete
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -208,12 +216,10 @@ function UserDeleteDialog({
 
 interface UserUpdateDialogProps extends ComponentProps<typeof Dialog> {
   user: User | null;
-  onSuccessUpdate?: (updatedUser: User) => void;
 }
 
 function UserUpdateDialog({
   user,
-  onSuccessUpdate,
   onOpenChange,
   ...props
 }: UserUpdateDialogProps) {
@@ -230,14 +236,15 @@ function UserUpdateDialog({
   const queryClient = useQueryClient();
   const { mutateAsync: triggerUpdateUser } = useMutation({
     mutationFn: userHttpClient.updateUser(user?.id ?? ''),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['users', 'all'] });
+      toast.success('User updated successfully!');
+      handleOpenChange(false);
     },
   });
 
-  const handleSubmit = async (values: UpdateUserSchema) => {
-    const { data } = await triggerUpdateUser(values);
-    onSuccessUpdate?.(data);
+  const handleSubmit = async (payload: UpdateUserSchema) => {
+    await triggerUpdateUser(payload);
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -264,15 +271,10 @@ function UserUpdateDialog({
   );
 }
 
-interface UserCreateDialogProps extends ComponentProps<typeof Dialog> {
-  onSuccessCreate?: (createdUser: User) => void;
-}
-
 function UserCreateDialog({
-  onSuccessCreate,
   onOpenChange,
   ...props
-}: UserCreateDialogProps) {
+}: ComponentProps<typeof Dialog>) {
   const form = useForm<CreateUserSchema>({
     resolver: zodResolver(createUserSchema),
     values: {
@@ -284,20 +286,18 @@ function UserCreateDialog({
   });
 
   const queryClient = useQueryClient();
-  const { mutateAsync: triggerUpdateUser, error } = useMutation({
+  const { mutateAsync: triggerUpdateUser } = useMutation({
     mutationFn: (payload: CreateUserSchema) =>
       userHttpClient.createNewUser(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['users', 'all'] });
+      toast.success('User created successfully!');
+      handleOpenChange(false);
     },
   });
 
   const handleSubmit = async (values: CreateUserSchema) => {
-    const { data } = await triggerUpdateUser(values);
-    if (!error) {
-      toast.success('User created successfully!');
-      onSuccessCreate?.(data);
-    }
+    await triggerUpdateUser(values);
   };
 
   const handleOpenChange = (open: boolean) => {

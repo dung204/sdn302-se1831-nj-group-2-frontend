@@ -1,7 +1,9 @@
 import type { SuccessResponse } from '@/common/types';
-import type { LoginSchema } from '@/common/types/api/auth';
-import type { LoginSuccessPayload } from '@/common/types/api/auth/login-success-payload';
-import type { ChangePasswordSchema } from '@/common/types/api/user';
+import type {
+  ChangePasswordSchema,
+  LoginSchema,
+} from '@/common/types/api/auth';
+import type { LoginSuccessPayload } from '@/common/types/api/auth/login-success-payload.type';
 import { HttpClient } from '@/lib/http/core.http';
 
 class AuthHttpClient extends HttpClient {

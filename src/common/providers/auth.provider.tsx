@@ -16,7 +16,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const { data } = useQuery({
     queryFn: () => userHttpClient.getUserById(userId!),
-    queryKey: ['users', userId],
+    queryKey: ['users', 'single', { id: userId }],
     enabled: userId !== null,
   });
 

@@ -1,7 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
+import { type AxiosError, HttpStatusCode } from 'axios';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 
 import { localStorageService } from '@/common/services';
 import { LocalStorageKey } from '@/common/types';
@@ -58,18 +60,21 @@ function LoginForm({
 
   const { mutateAsync: triggerLogin, isPending } = useMutation({
     mutationFn: (payload: LoginSchema) => authHttpClient.login(payload),
-  });
-
-  const onSubmit = async (payload: LoginSchema) => {
-    const { data } = await triggerLogin(payload);
-
-    if (data) {
+    onSuccess: ({ data }) => {
       const { accessToken, refreshToken } = data;
       localStorageService.set(LocalStorageKey.ACCESS_TOKEN, accessToken);
       localStorageService.set(LocalStorageKey.REFRESH_TOKEN, refreshToken);
       navigate({ to: '/' });
-      return;
-    }
+    },
+    onError: (error: AxiosError) => {
+      if (error.status === HttpStatusCode.Unauthorized) {
+        toast.error('Username or password is incorrect.');
+      }
+    },
+  });
+
+  const onSubmit = async (payload: LoginSchema) => {
+    await triggerLogin(payload);
   };
 
   return (
@@ -78,7 +83,7 @@ function LoginForm({
         <CardHeader>
           <CardTitle className="text-center text-2xl">Login</CardTitle>
           <CardDescription className="text-center">
-            Enter your email below to login to your account
+            Enter your username & password below to continue
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -92,7 +97,11 @@ function LoginForm({
                     <FormItem className="grid gap-2">
                       <FormLabel required>Username</FormLabel>
                       <FormControl>
-                        <Input disabled={isPending} {...field} />
+                        <Input
+                          autoComplete="username"
+                          disabled={isPending}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -106,7 +115,7 @@ function LoginForm({
                       <FormLabel required>Password</FormLabel>
                       <FormControl>
                         <PasswordInput
-                          id="password"
+                          autoComplete="current-password"
                           disabled={isPending}
                           {...field}
                         />

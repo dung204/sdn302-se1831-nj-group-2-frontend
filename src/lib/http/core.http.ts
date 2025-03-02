@@ -99,6 +99,7 @@ export class HttpClient {
 
     if (error.status === HttpStatusCode.Unauthorized) {
       if (window.location.pathname !== '/login') {
+        toast.error('Please login to continue.');
         localStorageService.remove(LocalStorageKey.ACCESS_TOKEN);
         localStorageService.remove(LocalStorageKey.REFRESH_TOKEN);
         window.location.replace('/login');

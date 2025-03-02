@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useSearch } from '@tanstack/react-router';
+import { getRouteApi, useNavigate } from '@tanstack/react-router';
 import type { RowSelectionState } from '@tanstack/react-table';
 import { Undo2 } from 'lucide-react';
 import { type ComponentProps, useState } from 'react';
 import { toast } from 'sonner';
 
-import { userSearchParamsSchema } from '@/common/types/api/user';
+import type { SuccessResponse } from '@/common/types';
+import { type User, userSearchParamsSchema } from '@/common/types/api/user';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,13 +20,13 @@ import { Button } from '@/components/ui/button';
 import { DataTableHeader, UserDataTable } from '@/components/ui/data-table';
 import { userHttpClient } from '@/lib/http';
 
+const route = getRouteApi('/_non-auth-layout/users/deleted/');
+
 export function ManageDeletedUsersPage() {
-  const searchParams = userSearchParamsSchema.parse(
-    useSearch({ from: '/_non-auth-layout/users/deleted/' }),
-  );
+  const searchParams = userSearchParamsSchema.parse(route.useSearch());
 
   const { data: res, isLoading } = useQuery({
-    queryKey: ['deleted-users', searchParams],
+    queryKey: ['deleted-users', 'all', searchParams],
     queryFn: () => userHttpClient.getAllDeletedUsers(searchParams),
   });
 
@@ -89,24 +90,44 @@ function UserRestoreDialog({
   onRestore,
   ...props
 }: UserRestoreDialogProps) {
+  const searchParams = userSearchParamsSchema.parse(route.useSearch());
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { mutateAsync: triggerRestoreUser } = useMutation({
-    mutationFn: (id: string) => userHttpClient.restoreUser(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deleted-users'] });
+  const { mutateAsync: triggerRestoreUsers } = useMutation({
+    mutationFn: async (userIds: string[]) => {
+      const result = await Promise.allSettled(
+        userIds.map((id) => userHttpClient.restoreUser(id)),
+      );
+      return Object.groupBy(result, (r) => r.status);
+    },
+    onSuccess: async ({ fulfilled, rejected }) => {
+      await queryClient.invalidateQueries({
+        queryKey: ['deleted-users', 'all'],
+      });
+      const res = queryClient.getQueryData<SuccessResponse<User[]>>([
+        'deleted-users',
+        'all',
+        searchParams,
+      ]);
+      if (res!.meta.pagination.page > res!.meta.pagination.totalPage) {
+        navigate({
+          to: '/users/deleted',
+          search: {
+            ...searchParams,
+            page: res!.meta.pagination.totalPage,
+          },
+        });
+      }
+      toast.info(
+        `Result: ${fulfilled?.length || 0} deleted, ${rejected?.length || 0} failed`,
+      );
+      onRestore?.(userIds);
     },
   });
 
   const handleRestore = async () => {
-    const result = await Promise.allSettled(
-      userIds.map((id) => triggerRestoreUser(id)),
-    );
-    const { fulfilled, rejected } = Object.groupBy(result, (r) => r.status);
-    toast.info(
-      `Result: ${fulfilled?.length || 0} restored, ${rejected?.length || 0} failed`,
-    );
-    onRestore?.(userIds);
+    await triggerRestoreUsers(userIds);
   };
 
   return (
