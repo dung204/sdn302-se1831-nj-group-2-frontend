@@ -1,19 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useLocation, useNavigate } from '@tanstack/react-router';
-import { LockKeyhole, LogOut, User } from 'lucide-react';
+import { LockKeyhole, LogOut, User as UserIcon } from 'lucide-react';
 import { type ComponentProps, Fragment, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/common/hooks';
-import { localStorageService } from '@/common/services';
-import { LocalStorageKey } from '@/common/types';
-import {
-  type ChangePasswordSchema,
-  changePasswordSchema,
-} from '@/common/types/api/auth';
-import { getBreadcrumbItems } from '@/common/utils';
+import { type ChangePasswordSchema, changePasswordSchema } from '@/common/types/api/auth';
+import type { User } from '@/common/types/api/user';
+import { navItems } from '@/components/layouts';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -56,8 +52,9 @@ import { authHttpClient } from '@/lib/http';
 
 export function HeaderLayout() {
   const location = useLocation();
+  const { user } = useAuth();
 
-  const breadcrumbItems = getBreadcrumbItems(location.pathname);
+  const breadcrumbItems = getBreadcrumbItems(location.pathname, user!);
 
   return (
     <header className="sticky top-0 flex h-16 justify-between border-b bg-background px-4">
@@ -85,25 +82,40 @@ export function HeaderLayout() {
   );
 }
 
-function UserMenu() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
+function getBreadcrumbItems(pathname: string, user: User) {
+  const foundItems = navItems[user.role].find((item) => {
+    if ('url' in item) {
+      return item.url === pathname;
+    }
 
-  const { mutateAsync: triggerLogout, isError } = useMutation({
-    mutationFn: () => authHttpClient.logout(),
+    return item.urls.some((item) => item.url === pathname);
   });
 
-  const [isChangePasswordDialogOpne, setIsChangePasswordDialogOpen] =
-    useState(false);
+  if (!foundItems) return [];
+  if ('url' in foundItems || foundItems.urls.length === 0) return [foundItems.title];
+
+  const subUrl = foundItems.urls.find((item) => item.url === pathname);
+
+  if (!subUrl) return [foundItems.title];
+  return [foundItems.title, subUrl.title];
+}
+
+function UserMenu() {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const { mutateAsync: triggerLogout } = useMutation({
+    mutationFn: () => authHttpClient.logout(),
+    onSuccess: () => {
+      logout();
+      navigate({ to: '/login', reloadDocument: true });
+    },
+  });
+
+  const [isChangePasswordDialogOpne, setIsChangePasswordDialogOpen] = useState(false);
 
   const handleLogout = async () => {
     await triggerLogout();
-
-    if (!isError) {
-      localStorageService.remove(LocalStorageKey.ACCESS_TOKEN);
-      localStorageService.remove(LocalStorageKey.REFRESH_TOKEN);
-      navigate({ to: '/login' });
-    }
   };
 
   return (
@@ -112,14 +124,11 @@ function UserMenu() {
         <DropdownMenuTrigger>
           <Avatar>
             <AvatarFallback>
-              <User className="size-4" />
+              <UserIcon className="size-4" />
             </AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="end"
-          onCloseAutoFocus={(e) => e.preventDefault()}
-        >
+        <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
           <div className="flex gap-10">
             <DropdownMenuLabel>
               {user?.firstName} {user?.lastName}
@@ -146,10 +155,7 @@ function UserMenu() {
   );
 }
 
-function ChangePasswordDialog({
-  onOpenChange,
-  ...props
-}: ComponentProps<typeof Dialog>) {
+function ChangePasswordDialog({ onOpenChange, ...props }: ComponentProps<typeof Dialog>) {
   const form = useForm<ChangePasswordSchema>({
     resolver: zodResolver(changePasswordSchema),
     defaultValues: {
@@ -160,8 +166,7 @@ function ChangePasswordDialog({
   });
 
   const { mutateAsync: triggerChangePassword, isPending } = useMutation({
-    mutationFn: (payload: ChangePasswordSchema) =>
-      authHttpClient.changePassword(payload),
+    mutationFn: (payload: ChangePasswordSchema) => authHttpClient.changePassword(payload),
     onSuccess: () => {
       toast.success('Password changed successfully');
       handleOpenChange(false);
@@ -213,11 +218,7 @@ function ChangePasswordDialog({
                   <FormItem className="grid gap-2">
                     <FormLabel required>New password</FormLabel>
                     <FormControl>
-                      <PasswordInput
-                        autoComplete="new-password"
-                        disabled={isPending}
-                        {...field}
-                      />
+                      <PasswordInput autoComplete="new-password" disabled={isPending} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

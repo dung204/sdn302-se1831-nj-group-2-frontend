@@ -1,9 +1,5 @@
 import type { CommonSearchParams, SuccessResponse } from '@/common/types';
-import type {
-  CreateUserSchema,
-  UpdateUserSchema,
-  User,
-} from '@/common/types/api/user';
+import type { CreateUserSchema, UpdateUserSchema, User } from '@/common/types/api/user';
 import { HttpClient } from '@/lib/http/core.http';
 
 class UserHttpClient extends HttpClient {

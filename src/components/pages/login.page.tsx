@@ -1,21 +1,17 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
+import { Navigate, useNavigate } from '@tanstack/react-router';
 import { type AxiosError, HttpStatusCode } from 'axios';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
+import { useAuth } from '@/common/hooks';
 import { localStorageService } from '@/common/services';
 import { LocalStorageKey } from '@/common/types';
 import { type LoginSchema, loginSchema } from '@/common/types/api/auth';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -32,6 +28,18 @@ import { cn } from '@/lib/cn';
 import { authHttpClient } from '@/lib/http';
 
 export function LoginPage() {
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user) {
+      document.title = 'Login | Internet Cafe Management';
+    }
+  }, [user]);
+
+  if (user) {
+    return <Navigate to="/" />;
+  }
+
   return (
     <div className="relative h-svh w-full">
       <ThemeToggler className="absolute right-6 top-6 z-20" />
@@ -44,10 +52,8 @@ export function LoginPage() {
   );
 }
 
-function LoginForm({
-  className,
-  ...props
-}: React.ComponentPropsWithoutRef<'div'>) {
+function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+  const { authenticate } = useAuth();
   const navigate = useNavigate();
 
   const form = useForm<LoginSchema>({
@@ -60,11 +66,12 @@ function LoginForm({
 
   const { mutateAsync: triggerLogin, isPending } = useMutation({
     mutationFn: (payload: LoginSchema) => authHttpClient.login(payload),
-    onSuccess: ({ data }) => {
+    onSuccess: async ({ data }) => {
       const { accessToken, refreshToken } = data;
       localStorageService.set(LocalStorageKey.ACCESS_TOKEN, accessToken);
       localStorageService.set(LocalStorageKey.REFRESH_TOKEN, refreshToken);
-      navigate({ to: '/' });
+      await authenticate();
+      navigate({ to: '/', reloadDocument: true });
     },
     onError: (error: AxiosError) => {
       if (error.status === HttpStatusCode.Unauthorized) {
@@ -97,11 +104,7 @@ function LoginForm({
                     <FormItem className="grid gap-2">
                       <FormLabel required>Username</FormLabel>
                       <FormControl>
-                        <Input
-                          autoComplete="username"
-                          disabled={isPending}
-                          {...field}
-                        />
+                        <Input autoComplete="username" disabled={isPending} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

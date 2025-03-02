@@ -24,10 +24,7 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       'no-process-env': 'error',
       camelcase: [
         'error',
@@ -57,6 +54,7 @@ export default tseslint.config(
           caughtErrors: 'none',
         },
       ],
+      'react-refresh/only-export-components': 'off',
     },
   },
 );

@@ -11,14 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from './form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './form';
 
 interface UserFormProps<
   TFieldValues extends Partial<User> = Partial<User>,
@@ -26,12 +19,8 @@ interface UserFormProps<
   TTransformedValues extends Partial<User> | undefined = undefined,
 > extends PropsWithChildren {
   form: UseFormReturn<TFieldValues, TContext, undefined>;
-  onValidSubmit: Parameters<
-    UseFormHandleSubmit<TFieldValues, TTransformedValues>
-  >[0];
-  onInvalidSubmit?: Parameters<
-    UseFormHandleSubmit<TFieldValues, TTransformedValues>
-  >[1];
+  onValidSubmit: Parameters<UseFormHandleSubmit<TFieldValues, TTransformedValues>>[0];
+  onInvalidSubmit?: Parameters<UseFormHandleSubmit<TFieldValues, TTransformedValues>>[1];
 }
 
 export function UserForm<

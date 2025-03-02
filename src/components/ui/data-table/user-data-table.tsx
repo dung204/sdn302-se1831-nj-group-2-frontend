@@ -12,8 +12,7 @@ const userDataTableColumns = [
     header: ({ table }) => (
       <Checkbox
         checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && 'indeterminate')
+          table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')
         }
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         title="Select all rows"
@@ -36,15 +35,11 @@ const userDataTableColumns = [
   },
   {
     accessorKey: 'firstName',
-    header: ({ column }) => (
-      <DataTableHeader column={column} title="First name" />
-    ),
+    header: ({ column }) => <DataTableHeader column={column} title="First name" />,
   },
   {
     accessorKey: 'lastName',
-    header: ({ column }) => (
-      <DataTableHeader column={column} title="Last name" />
-    ),
+    header: ({ column }) => <DataTableHeader column={column} title="Last name" />,
   },
   {
     accessorKey: 'address',
@@ -56,9 +51,7 @@ const userDataTableColumns = [
   },
   {
     accessorKey: 'createTimestamp',
-    header: ({ column }) => (
-      <DataTableHeader column={column} title="Created At" />
-    ),
+    header: ({ column }) => <DataTableHeader column={column} title="Created At" />,
     cell: ({ row }) => {
       const date = new Date(row.getValue<string>('createTimestamp'));
       const formattedDate = new Intl.DateTimeFormat('en-US', {
@@ -73,20 +66,14 @@ const userDataTableColumns = [
 
 interface UserDataTableProps
   extends Omit<ComponentProps<typeof DataTable<User>>, 'columns' | 'getRowId'> {
-  renderColumns?: (
-    existingColumns: typeof userDataTableColumns,
-  ) => ColumnDef<User>[];
+  renderColumns?: (existingColumns: typeof userDataTableColumns) => ColumnDef<User>[];
 }
 
 export function UserDataTable({ renderColumns, ...props }: UserDataTableProps) {
   return (
     <DataTable
       getRowId={(row) => row.id}
-      columns={
-        !renderColumns
-          ? userDataTableColumns
-          : renderColumns(userDataTableColumns)
-      }
+      columns={!renderColumns ? userDataTableColumns : renderColumns(userDataTableColumns)}
       {...props}
     />
   );

@@ -1,13 +1,9 @@
-import { useMemo, useState } from 'react';
+import { Navigate } from '@tanstack/react-router';
+import { useEffect, useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useAuth } from '@/common/hooks';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   type ChartConfig,
   ChartContainer,
@@ -126,8 +122,8 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function DashboardPage() {
-  const [activeChart, setActiveChart] =
-    useState<keyof typeof chartConfig>('desktop');
+  const { user } = useAuth();
+  const [activeChart, setActiveChart] = useState<keyof typeof chartConfig>('desktop');
 
   const total = useMemo(
     () => ({
@@ -137,14 +133,22 @@ export function DashboardPage() {
     [],
   );
 
+  useEffect(() => {
+    if (user) {
+      document.title = 'Dashboard | Internet Cafe Management';
+    }
+  }, [user]);
+
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
         <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6">
           <CardTitle>Bar Chart - Interactive</CardTitle>
-          <CardDescription>
-            Showing total visitors for the last 3 months
-          </CardDescription>
+          <CardDescription>Showing total visitors for the last 3 months</CardDescription>
         </div>
         <div className="flex">
           {['desktop', 'mobile'].map((key) => {
@@ -156,9 +160,7 @@ export function DashboardPage() {
                 className="relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-6 py-4 text-left even:border-l data-[active=true]:bg-muted/50 sm:border-l sm:border-t-0 sm:px-8 sm:py-6"
                 onClick={() => setActiveChart(chart)}
               >
-                <span className="text-xs text-muted-foreground">
-                  {chartConfig[chart].label}
-                </span>
+                <span className="text-xs text-muted-foreground">{chartConfig[chart].label}</span>
                 <span className="text-lg font-bold leading-none sm:text-3xl">
                   {total[key as keyof typeof total].toLocaleString()}
                 </span>
@@ -168,10 +170,7 @@ export function DashboardPage() {
         </div>
       </CardHeader>
       <CardContent className="px-2 sm:p-6">
-        <ChartContainer
-          config={chartConfig}
-          className="aspect-auto h-[250px] w-full"
-        >
+        <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
           <BarChart
             accessibilityLayer
             data={chartData}

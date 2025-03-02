@@ -15,10 +15,7 @@ import {
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import type { ComponentProps } from 'react';
 
-import type {
-  Pagination as PaginationMetadata,
-  Sorting as SortingMetadata,
-} from '@/common/types';
+import type { Pagination as PaginationMetadata, Sorting as SortingMetadata } from '@/common/types';
 import { LoadingIndicator } from '@/components/ui/loading-indicator';
 import { Pagination, PaginationSkeleton } from '@/components/ui/pagination';
 import {
@@ -75,8 +72,8 @@ export function DataTable<TData>({
         <div>
           {Object.keys(state?.rowSelection || {}).length !== 0 && (
             <p className="text-sm text-muted-foreground">
-              {Object.keys(state?.rowSelection || {}).length} of{' '}
-              {pagination?.total} item(s) selected.
+              {Object.keys(state?.rowSelection || {}).length} of {pagination?.total} item(s)
+              selected.
             </p>
           )}
         </div>
@@ -101,10 +98,7 @@ export function DataTable<TData>({
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
+                        : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   );
                 })}
@@ -116,10 +110,7 @@ export function DataTable<TData>({
               if (loading) {
                 return (
                   <TableRow>
-                    <TableCell
-                      colSpan={table.getAllColumns().length}
-                      className="h-24"
-                    >
+                    <TableCell colSpan={table.getAllColumns().length} className="h-24">
                       <div className="flex h-full items-center justify-center">
                         <LoadingIndicator className="size-12" />
                       </div>
@@ -138,10 +129,7 @@ export function DataTable<TData>({
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
                   </TableRow>
@@ -150,10 +138,7 @@ export function DataTable<TData>({
 
               return (
                 <TableRow>
-                  <TableCell
-                    colSpan={table.getAllColumns().length}
-                    className="h-24 text-center"
-                  >
+                  <TableCell colSpan={table.getAllColumns().length} className="h-24 text-center">
                     No results.
                   </TableCell>
                 </TableRow>
@@ -181,8 +166,7 @@ export function DataTableHeader<TData>({
   const headerTitle = title ?? column.id;
 
   const handleSort = () => {
-    const direction =
-      !column.getIsSorted() || column.getIsSorted() === 'desc' ? 'asc' : 'desc';
+    const direction = !column.getIsSorted() || column.getIsSorted() === 'desc' ? 'asc' : 'desc';
     const url = new URL(location.href);
 
     navigate({

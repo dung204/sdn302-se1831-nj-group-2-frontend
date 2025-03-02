@@ -1,12 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getRouteApi, useNavigate } from '@tanstack/react-router';
+import { Navigate, getRouteApi, useNavigate } from '@tanstack/react-router';
 import type { RowSelectionState } from '@tanstack/react-table';
 import { Edit, Ellipsis, Plus, Trash2 } from 'lucide-react';
-import { type ComponentProps, useState } from 'react';
+import { type ComponentProps, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
+import { useAuth } from '@/common/hooks';
 import { type SuccessResponse } from '@/common/types';
 import {
   type CreateUserSchema,
@@ -48,6 +49,7 @@ const route = getRouteApi('/_non-auth-layout/users/');
 
 export function ManageUsersPage() {
   const searchParams = userSearchParamsSchema.parse(route.useSearch());
+  const { user } = useAuth();
 
   const { data: res, isLoading } = useQuery({
     queryKey: ['users', 'all', searchParams],
@@ -59,6 +61,20 @@ export function ManageUsersPage() {
   const [userToUpdate, setUserToUpdate] = useState<User | null>(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (user?.role === Role.OWNER) {
+      document.title = 'Existing users | Internet Cafe Management';
+    }
+  }, [user]);
+
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  if (user.role !== Role.OWNER) {
+    return <Navigate to="/" />;
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -133,10 +149,7 @@ export function ManageUsersPage() {
         open={isUpdateDialogOpen}
         onOpenChange={setIsUpdateDialogOpen}
       />
-      <UserCreateDialog
-        open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-      />
+      <UserCreateDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
     </div>
   );
 }
@@ -146,11 +159,7 @@ interface UserDeleteDialogProps extends ComponentProps<typeof AlertDialog> {
   onDelete?: (deletedUserIds: string[]) => void;
 }
 
-function UserDeleteDialog({
-  userIds,
-  onDelete,
-  ...props
-}: UserDeleteDialogProps) {
+function UserDeleteDialog({ userIds, onDelete, ...props }: UserDeleteDialogProps) {
   const searchParams = userSearchParamsSchema.parse(route.useSearch());
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -164,11 +173,7 @@ function UserDeleteDialog({
     },
     onSuccess: async ({ fulfilled, rejected }) => {
       await queryClient.invalidateQueries({ queryKey: ['users', 'all'] });
-      const res = queryClient.getQueryData<SuccessResponse<User[]>>([
-        'users',
-        'all',
-        searchParams,
-      ]);
+      const res = queryClient.getQueryData<SuccessResponse<User[]>>(['users', 'all', searchParams]);
       if (
         res!.meta.pagination.page > res!.meta.pagination.totalPage &&
         res!.meta.pagination.totalPage > 0
@@ -178,9 +183,7 @@ function UserDeleteDialog({
           search: { ...searchParams, page: res!.meta.pagination.totalPage },
         });
       }
-      toast.info(
-        `Result: ${fulfilled?.length || 0} deleted, ${rejected?.length || 0} failed`,
-      );
+      toast.info(`Result: ${fulfilled?.length || 0} deleted, ${rejected?.length || 0} failed`);
       onDelete?.(userIds);
     },
   });
@@ -201,11 +204,7 @@ function UserDeleteDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            variant="danger"
-            disabled={isPending}
-            onClick={handleDelete}
-          >
+          <AlertDialogAction variant="danger" disabled={isPending} onClick={handleDelete}>
             Delete
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -218,11 +217,7 @@ interface UserUpdateDialogProps extends ComponentProps<typeof Dialog> {
   user: User | null;
 }
 
-function UserUpdateDialog({
-  user,
-  onOpenChange,
-  ...props
-}: UserUpdateDialogProps) {
+function UserUpdateDialog({ user, onOpenChange, ...props }: UserUpdateDialogProps) {
   const form = useForm<UpdateUserSchema>({
     resolver: zodResolver(updateUserSchema),
     values: {
@@ -271,10 +266,7 @@ function UserUpdateDialog({
   );
 }
 
-function UserCreateDialog({
-  onOpenChange,
-  ...props
-}: ComponentProps<typeof Dialog>) {
+function UserCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dialog>) {
   const form = useForm<CreateUserSchema>({
     resolver: zodResolver(createUserSchema),
     values: {
@@ -287,8 +279,7 @@ function UserCreateDialog({
 
   const queryClient = useQueryClient();
   const { mutateAsync: triggerUpdateUser } = useMutation({
-    mutationFn: (payload: CreateUserSchema) =>
-      userHttpClient.createNewUser(payload),
+    mutationFn: (payload: CreateUserSchema) => userHttpClient.createNewUser(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users', 'all'] });
       toast.success('User created successfully!');

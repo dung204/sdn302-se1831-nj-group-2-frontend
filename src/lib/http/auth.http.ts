@@ -1,8 +1,5 @@
 import type { SuccessResponse } from '@/common/types';
-import type {
-  ChangePasswordSchema,
-  LoginSchema,
-} from '@/common/types/api/auth';
+import type { ChangePasswordSchema, LoginSchema } from '@/common/types/api/auth';
 import type { LoginSuccessPayload } from '@/common/types/api/auth/login-success-payload.type';
 import { HttpClient } from '@/lib/http/core.http';
 
@@ -12,17 +9,11 @@ class AuthHttpClient extends HttpClient {
   }
 
   public login(payload: LoginSchema) {
-    return this.post<SuccessResponse<LoginSuccessPayload>>(
-      '/auth/login',
-      payload,
-    );
+    return this.post<SuccessResponse<LoginSuccessPayload>>('/auth/login', payload);
   }
 
   public refresh(refreshToken: string) {
-    return this.post<SuccessResponse<LoginSuccessPayload>>(
-      '/auth/refresh-token',
-      { refreshToken },
-    );
+    return this.post<SuccessResponse<LoginSuccessPayload>>('/auth/refresh-token', { refreshToken });
   }
 
   public logout() {

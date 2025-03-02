@@ -40,10 +40,7 @@ export class HttpClient {
 
     this.axiosInstance.interceptors.request.use(this.onSuccessRequest);
 
-    this.axiosInstance.interceptors.response.use(
-      this.onSuccessResponse,
-      this.onFailedResponse,
-    );
+    this.axiosInstance.interceptors.response.use(this.onSuccessResponse, this.onFailedResponse);
   }
 
   protected async onSuccessRequest({
@@ -62,24 +59,15 @@ export class HttpClient {
 
         config.headers.Authorization = `Bearer ${accessToken}`;
       } catch (accessTokenError) {
-        refreshToken = localStorageService.get(
-          LocalStorageKey.REFRESH_TOKEN,
-          '',
-        );
+        refreshToken = localStorageService.get(LocalStorageKey.REFRESH_TOKEN, '');
         const result = (
           await axios.post(`${envVariables.BASE_URL}/auth/refresh-token`, {
             refreshToken,
           })
         ).data.data;
 
-        localStorageService.set(
-          LocalStorageKey.ACCESS_TOKEN,
-          result.accessToken,
-        );
-        localStorageService.set(
-          LocalStorageKey.REFRESH_TOKEN,
-          result.refreshToken,
-        );
+        localStorageService.set(LocalStorageKey.ACCESS_TOKEN, result.accessToken);
+        localStorageService.set(LocalStorageKey.REFRESH_TOKEN, result.refreshToken);
 
         config.headers.Authorization = `Bearer ${result.accessToken}`;
       }
@@ -113,27 +101,15 @@ export class HttpClient {
     return this.axiosInstance.get<T, T>(url, config);
   }
 
-  public post<T>(
-    url: string,
-    data?: unknown,
-    config?: CustomAxiosRequestConfig,
-  ) {
+  public post<T>(url: string, data?: unknown, config?: CustomAxiosRequestConfig) {
     return this.axiosInstance.post<T, T>(url, data, config);
   }
 
-  public patch<T>(
-    url: string,
-    data?: unknown,
-    config?: CustomAxiosRequestConfig,
-  ) {
+  public patch<T>(url: string, data?: unknown, config?: CustomAxiosRequestConfig) {
     return this.axiosInstance.patch<T, T>(url, data, config);
   }
 
-  public put<T>(
-    url: string,
-    data?: unknown,
-    config?: CustomAxiosRequestConfig,
-  ) {
+  public put<T>(url: string, data?: unknown, config?: CustomAxiosRequestConfig) {
     return this.axiosInstance.put<T, T>(url, data, config);
   }
 

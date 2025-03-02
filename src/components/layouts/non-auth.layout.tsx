@@ -1,6 +1,5 @@
 import { Outlet } from '@tanstack/react-router';
 
-import { AuthProvider } from '@/common/providers';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import '@/styles/globals.css';
@@ -10,18 +9,16 @@ import { SidebarLayout } from './sidebar.layout';
 
 export function NonAuthLayout() {
   return (
-    <AuthProvider>
-      <SidebarProvider>
-        <SidebarLayout />
-        <SidebarInset>
-          <HeaderLayout />
-          <ScrollArea className="h-[calc(100vh-4rem)]">
-            <main className="p-4">
-              <Outlet />
-            </main>
-          </ScrollArea>
-        </SidebarInset>
-      </SidebarProvider>
-    </AuthProvider>
+    <SidebarProvider>
+      <SidebarLayout />
+      <SidebarInset>
+        <HeaderLayout />
+        <ScrollArea className="h-[calc(100vh-4rem)]">
+          <main className="p-4">
+            <Outlet />
+          </main>
+        </ScrollArea>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
