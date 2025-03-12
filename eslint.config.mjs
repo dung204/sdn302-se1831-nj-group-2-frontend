@@ -24,10 +24,7 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       'no-process-env': 'error',
       camelcase: [
         'error',
@@ -50,6 +47,17 @@ export default tseslint.config(
           message: 'Use named exports instead (i.e. export const foo = ...)',
         },
       ],
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          caughtErrors: 'none',
+          caughtErrorsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+          argsIgnorePattern: '^_',
+        },
+      ],
+      'react-refresh/only-export-components': 'off',
     },
   },
 );

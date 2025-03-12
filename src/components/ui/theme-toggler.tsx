@@ -25,10 +25,7 @@ export function ThemeToggler({ className }: ThemeTogglerProps) {
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        onCloseAutoFocus={(e) => e.preventDefault()}
-      >
+      <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
         <DropdownMenuCheckboxItem
           className="cursor-pointer"
           checked={theme === 'light'}

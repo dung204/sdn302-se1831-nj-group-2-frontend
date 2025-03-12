@@ -1,15 +1,17 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getRouteApi, useNavigate } from '@tanstack/react-router';
+import { Navigate, getRouteApi, useNavigate } from '@tanstack/react-router';
 import type { RowSelectionState } from '@tanstack/react-table';
 import { Edit, Ellipsis, Plus, Trash2 } from 'lucide-react';
-import { type ComponentProps, useState } from 'react';
+import { type ComponentProps, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { Role, type SuccessResponse } from '@/common/types';
+import { useAuth } from '@/common/hooks';
+import { type SuccessResponse } from '@/common/types';
 import {
   type CreateUserSchema,
+  Role,
   type UpdateUserSchema,
   type User,
   createUserSchema,
@@ -26,6 +28,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { UserDataTable } from '@/components/ui/data-table';
 import {
   Dialog,
@@ -40,16 +43,33 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { UserForm } from '@/components/ui/form/user-form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { userHttpClient } from '@/lib/http';
 
 const route = getRouteApi('/_non-auth-layout/users/');
 
 export function ManageUsersPage() {
   const searchParams = userSearchParamsSchema.parse(route.useSearch());
+  const { user } = useAuth();
 
   const { data: res, isLoading } = useQuery({
-    queryKey: ['users', searchParams],
+    queryKey: ['users', 'all', searchParams],
     queryFn: () => userHttpClient.getAllUsers(searchParams),
   });
 
@@ -58,6 +78,20 @@ export function ManageUsersPage() {
   const [userToUpdate, setUserToUpdate] = useState<User | null>(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (user?.role === Role.OWNER) {
+      document.title = 'Existing users | Internet Cafe Management';
+    }
+  }, [user]);
+
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  if (user.role !== Role.OWNER) {
+    return <Navigate to="/" />;
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -76,45 +110,82 @@ export function ManageUsersPage() {
         data={res?.data ?? []}
         pagination={res?.meta.pagination}
         sorting={res?.meta.sorting}
+        filter={res?.meta.filter}
+        enableRowSelection={(row) => row.original.id !== user.id}
         onRowSelectionChange={setUsersToDelete}
         state={{
           rowSelection: usersToDelete,
         }}
         renderColumns={(existingColumns) => [
+          {
+            id: 'select',
+            header: ({ table }) => (
+              <Checkbox
+                checked={
+                  table.getIsAllPageRowsSelected() ||
+                  (table.getIsSomePageRowsSelected() && 'indeterminate')
+                }
+                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                title="Select all rows"
+              />
+            ),
+            cell: ({ row }) => {
+              if (row.original.id === user.id) {
+                return <></>;
+              }
+
+              return (
+                <Checkbox
+                  checked={row.getIsSelected()}
+                  onCheckedChange={(value) => row.toggleSelected(!!value)}
+                  title="Select this row"
+                />
+              );
+            },
+            enableSorting: false,
+            enableHiding: false,
+            enableResizing: false,
+          },
           ...existingColumns,
           {
             id: 'actions',
             header: '',
-            cell: ({ row }) => (
-              <DropdownMenu>
-                <DropdownMenuTrigger className="flex size-full items-center justify-center">
-                  <Ellipsis className="size-6" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={(e) => e.stopPropagation()}
-                    onSelect={() => {
-                      setUserToUpdate(row.original);
-                      setIsUpdateDialogOpen(true);
-                    }}
-                  >
-                    <Edit className="size-4" /> Edit
-                  </DropdownMenuItem>
-                  {Object.keys(usersToDelete).length === 0 && (
+            cell: ({ row }) => {
+              if (row.original.id === user.id) {
+                return <></>;
+              }
+
+              return (
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="flex size-full items-center justify-center">
+                    <Ellipsis className="size-6" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
                     <DropdownMenuItem
-                      className="text-danger focus:bg-danger focus:text-danger-foreground"
                       onClick={(e) => e.stopPropagation()}
                       onSelect={() => {
-                        setUsersToDelete({ [row.original.id]: true });
-                        setIsDeleteDialogOpen(true);
+                        setUserToUpdate(row.original);
+                        setIsUpdateDialogOpen(true);
                       }}
                     >
-                      <Trash2 className="size-4" /> Delete
+                      <Edit className="size-4" /> Edit
                     </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ),
+                    {Object.keys(usersToDelete).length === 0 && (
+                      <DropdownMenuItem
+                        className="text-danger focus:bg-danger focus:text-danger-foreground"
+                        onClick={(e) => e.stopPropagation()}
+                        onSelect={() => {
+                          setUsersToDelete({ [row.original.id]: true });
+                          setIsDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="size-4" /> Delete
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            },
             enableSorting: false,
             enableHiding: false,
             enableResizing: false,
@@ -131,13 +202,8 @@ export function ManageUsersPage() {
         user={userToUpdate!}
         open={isUpdateDialogOpen}
         onOpenChange={setIsUpdateDialogOpen}
-        onSuccessUpdate={() => setIsUpdateDialogOpen(false)}
       />
-      <UserCreateDialog
-        open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-        onSuccessCreate={() => setIsCreateDialogOpen(false)}
-      />
+      <UserCreateDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
     </div>
   );
 }
@@ -147,41 +213,37 @@ interface UserDeleteDialogProps extends ComponentProps<typeof AlertDialog> {
   onDelete?: (deletedUserIds: string[]) => void;
 }
 
-function UserDeleteDialog({
-  userIds,
-  onDelete,
-  ...props
-}: UserDeleteDialogProps) {
+function UserDeleteDialog({ userIds, onDelete, ...props }: UserDeleteDialogProps) {
   const searchParams = userSearchParamsSchema.parse(route.useSearch());
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { mutateAsync: triggerDeleteUser } = useMutation({
-    mutationFn: (id: string) => userHttpClient.softDeleteUser(id),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['users'] });
-      const res = queryClient.getQueryData<SuccessResponse<User[]>>([
-        'users',
-        searchParams,
-      ]);
-      if (res!.meta.pagination.page > res!.meta.pagination.totalPage) {
+  const { mutateAsync: triggerDeleteUsers, isPending } = useMutation({
+    mutationFn: async (userIds: string[]) => {
+      const result = await Promise.allSettled(
+        userIds.map((id) => userHttpClient.softDeleteUser(id)),
+      );
+      return Object.groupBy(result, (r) => r.status);
+    },
+    onSuccess: async ({ fulfilled, rejected }) => {
+      await queryClient.invalidateQueries({ queryKey: ['users', 'all'] });
+      const res = queryClient.getQueryData<SuccessResponse<User[]>>(['users', 'all', searchParams]);
+      if (
+        res!.meta.pagination.page > res!.meta.pagination.totalPage &&
+        res!.meta.pagination.totalPage > 0
+      ) {
         navigate({
           to: '/users',
           search: { ...searchParams, page: res!.meta.pagination.totalPage },
         });
       }
+      toast.info(`Result: ${fulfilled?.length || 0} deleted, ${rejected?.length || 0} failed`);
+      onDelete?.(userIds);
     },
   });
 
   const handleDelete = async () => {
-    const result = await Promise.allSettled(
-      userIds.map((id) => triggerDeleteUser(id)),
-    );
-    const { fulfilled, rejected } = Object.groupBy(result, (r) => r.status);
-    toast.info(
-      `Result: ${fulfilled?.length || 0} deleted, ${rejected?.length || 0} failed`,
-    );
-    onDelete?.(userIds);
+    await triggerDeleteUsers(userIds);
   };
 
   return (
@@ -195,8 +257,8 @@ function UserDeleteDialog({
           </AlertDialogTitle>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction variant="danger" onClick={handleDelete}>
+          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+          <AlertDialogAction variant="danger" disabled={isPending} onClick={handleDelete}>
             Delete
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -207,36 +269,31 @@ function UserDeleteDialog({
 
 interface UserUpdateDialogProps extends ComponentProps<typeof Dialog> {
   user: User | null;
-  onSuccessUpdate?: (updatedUser: User) => void;
 }
 
-function UserUpdateDialog({
-  user,
-  onSuccessUpdate,
-  onOpenChange,
-  ...props
-}: UserUpdateDialogProps) {
+function UserUpdateDialog({ user, onOpenChange, ...props }: UserUpdateDialogProps) {
   const form = useForm<UpdateUserSchema>({
     resolver: zodResolver(updateUserSchema),
     values: {
       firstName: !user ? '' : user.firstName,
       lastName: !user ? '' : user.lastName,
       address: !user ? '' : user.address,
-      role: !user ? Role.USER : user.role,
+      role: !user ? Role.GUEST : user.role,
     },
   });
 
   const queryClient = useQueryClient();
   const { mutateAsync: triggerUpdateUser } = useMutation({
     mutationFn: userHttpClient.updateUser(user?.id ?? ''),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['users', 'all'] });
+      toast.success('User updated successfully!');
+      handleOpenChange(false);
     },
   });
 
-  const handleSubmit = async (values: UpdateUserSchema) => {
-    const { data } = await triggerUpdateUser(values);
-    onSuccessUpdate?.(data);
+  const handleSubmit = async (payload: UpdateUserSchema) => {
+    await triggerUpdateUser(payload);
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -253,50 +310,102 @@ function UserUpdateDialog({
         <DialogHeader>
           <DialogTitle>Edit user info</DialogTitle>
         </DialogHeader>
-        <UserForm form={form} onValidSubmit={handleSubmit}>
-          <DialogFooter className="col-span-2">
-            <Button type="submit">Save</Button>
-          </DialogFooter>
-        </UserForm>
+        <Form {...form}>
+          <form className="grid grid-cols-2 gap-4" onSubmit={form.handleSubmit(handleSubmit)}>
+            <FormField
+              name="firstName"
+              render={({ field }) => (
+                <FormItem className="col-span-1">
+                  <FormLabel required>First name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="lastName"
+              render={({ field }) => (
+                <FormItem className="col-span-1">
+                  <FormLabel required>Last name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="address"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="role"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Role</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.values(Role).map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {role}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter className="col-span-2">
+              <Button type="submit">Save</Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
 }
 
-interface UserCreateDialogProps extends ComponentProps<typeof Dialog> {
-  onSuccessCreate?: (createdUser: User) => void;
-}
-
-function UserCreateDialog({
-  onSuccessCreate,
-  onOpenChange,
-  ...props
-}: UserCreateDialogProps) {
+function UserCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dialog>) {
   const form = useForm<CreateUserSchema>({
     resolver: zodResolver(createUserSchema),
     values: {
+      username: '',
+      password: '',
       firstName: '',
       lastName: '',
       address: '',
-      role: Role.USER,
+      role: Role.GUEST,
     },
   });
 
   const queryClient = useQueryClient();
-  const { mutateAsync: triggerUpdateUser, error } = useMutation({
-    mutationFn: (payload: CreateUserSchema) =>
-      userHttpClient.createNewUser(payload),
+  const { mutateAsync: triggerUpdateUser } = useMutation({
+    mutationFn: (payload: CreateUserSchema) => userHttpClient.createNewUser(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['users', 'all'] });
+      toast.success('User created successfully!');
+      handleOpenChange(false);
     },
   });
 
   const handleSubmit = async (values: CreateUserSchema) => {
-    const { data } = await triggerUpdateUser(values);
-    if (!error) {
-      toast.success('User created successfully!');
-      onSuccessCreate?.(data);
-    }
+    await triggerUpdateUser(values);
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -313,11 +422,96 @@ function UserCreateDialog({
         <DialogHeader>
           <DialogTitle>Add new user</DialogTitle>
         </DialogHeader>
-        <UserForm form={form} onValidSubmit={handleSubmit}>
-          <DialogFooter className="col-span-2">
-            <Button type="submit">Add</Button>
-          </DialogFooter>
-        </UserForm>
+        <Form {...form}>
+          <form className="grid grid-cols-2 gap-4" onSubmit={form.handleSubmit(handleSubmit)}>
+            <FormField
+              name="username"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel required>Username</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="password"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel required>Password</FormLabel>
+                  <FormControl>
+                    <PasswordInput autoComplete="current-password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="firstName"
+              render={({ field }) => (
+                <FormItem className="col-span-1">
+                  <FormLabel required>First name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="lastName"
+              render={({ field }) => (
+                <FormItem className="col-span-1">
+                  <FormLabel required>Last name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="address"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="role"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Role</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.values(Role).map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {role}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter className="col-span-2">
+              <Button type="submit">Save</Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
