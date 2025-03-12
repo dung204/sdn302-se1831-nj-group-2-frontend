@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { jwtDecode } from 'jwt-decode';
-import { type PropsWithChildren, useCallback, useEffect, useState } from 'react';
+import { type PropsWithChildren, useEffect, useState } from 'react';
 
 import { AuthContext } from '@/common/contexts';
 import { localStorageService } from '@/common/services';
@@ -30,7 +30,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
    *
    * @returns The user ID if authentication is successful, otherwise `null`.
    */
-  const authenticate = useCallback(async () => {
+  const authenticate = async () => {
     let accessToken: string;
     let refreshToken: string;
     let userId: string | null = null;
@@ -60,7 +60,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         return userId;
       }
     }
-  }, [triggerRefreshToken]);
+  };
 
   /**
    * Logs the user out by removing the access and refresh tokens from local storage.
@@ -81,7 +81,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setIsLoading(false);
       }
     })();
-  }, [authenticate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Set user after fetching user data
   useEffect(() => {

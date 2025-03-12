@@ -3,6 +3,7 @@ import { type UseFormHandleSubmit, type UseFormReturn } from 'react-hook-form';
 
 import { Role, type User } from '@/common/types/api/user';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import {
   Select,
   SelectContent,
@@ -39,6 +40,30 @@ export function UserForm<
         className="grid grid-cols-2 gap-4"
         onSubmit={form.handleSubmit(onValidSubmit, onInvalidSubmit)}
       >
+        <FormField
+          name="username"
+          render={({ field }) => (
+            <FormItem className="col-span-2">
+              <FormLabel required>Username</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          name="password"
+          render={({ field }) => (
+            <FormItem className="col-span-2">
+              <FormLabel required>Password</FormLabel>
+              <FormControl>
+                <PasswordInput autoComplete="current-password" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           name="firstName"
           render={({ field }) => (

@@ -52,6 +52,9 @@ export default tseslint.config(
         'error',
         {
           caughtErrors: 'none',
+          caughtErrorsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+          argsIgnorePattern: '^_',
         },
       ],
       'react-refresh/only-export-components': 'off',

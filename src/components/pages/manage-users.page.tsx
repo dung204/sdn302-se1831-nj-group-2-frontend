@@ -28,6 +28,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { UserDataTable } from '@/components/ui/data-table';
 import {
   Dialog,
@@ -42,7 +43,23 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { UserForm } from '@/components/ui/form/user-form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { userHttpClient } from '@/lib/http';
 
 const route = getRouteApi('/_non-auth-layout/users/');
@@ -93,45 +110,82 @@ export function ManageUsersPage() {
         data={res?.data ?? []}
         pagination={res?.meta.pagination}
         sorting={res?.meta.sorting}
+        filter={res?.meta.filter}
+        enableRowSelection={(row) => row.original.id !== user.id}
         onRowSelectionChange={setUsersToDelete}
         state={{
           rowSelection: usersToDelete,
         }}
         renderColumns={(existingColumns) => [
+          {
+            id: 'select',
+            header: ({ table }) => (
+              <Checkbox
+                checked={
+                  table.getIsAllPageRowsSelected() ||
+                  (table.getIsSomePageRowsSelected() && 'indeterminate')
+                }
+                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                title="Select all rows"
+              />
+            ),
+            cell: ({ row }) => {
+              if (row.original.id === user.id) {
+                return <></>;
+              }
+
+              return (
+                <Checkbox
+                  checked={row.getIsSelected()}
+                  onCheckedChange={(value) => row.toggleSelected(!!value)}
+                  title="Select this row"
+                />
+              );
+            },
+            enableSorting: false,
+            enableHiding: false,
+            enableResizing: false,
+          },
           ...existingColumns,
           {
             id: 'actions',
             header: '',
-            cell: ({ row }) => (
-              <DropdownMenu>
-                <DropdownMenuTrigger className="flex size-full items-center justify-center">
-                  <Ellipsis className="size-6" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={(e) => e.stopPropagation()}
-                    onSelect={() => {
-                      setUserToUpdate(row.original);
-                      setIsUpdateDialogOpen(true);
-                    }}
-                  >
-                    <Edit className="size-4" /> Edit
-                  </DropdownMenuItem>
-                  {Object.keys(usersToDelete).length === 0 && (
+            cell: ({ row }) => {
+              if (row.original.id === user.id) {
+                return <></>;
+              }
+
+              return (
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="flex size-full items-center justify-center">
+                    <Ellipsis className="size-6" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
                     <DropdownMenuItem
-                      className="text-danger focus:bg-danger focus:text-danger-foreground"
                       onClick={(e) => e.stopPropagation()}
                       onSelect={() => {
-                        setUsersToDelete({ [row.original.id]: true });
-                        setIsDeleteDialogOpen(true);
+                        setUserToUpdate(row.original);
+                        setIsUpdateDialogOpen(true);
                       }}
                     >
-                      <Trash2 className="size-4" /> Delete
+                      <Edit className="size-4" /> Edit
                     </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ),
+                    {Object.keys(usersToDelete).length === 0 && (
+                      <DropdownMenuItem
+                        className="text-danger focus:bg-danger focus:text-danger-foreground"
+                        onClick={(e) => e.stopPropagation()}
+                        onSelect={() => {
+                          setUsersToDelete({ [row.original.id]: true });
+                          setIsDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="size-4" /> Delete
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            },
             enableSorting: false,
             enableHiding: false,
             enableResizing: false,
@@ -256,11 +310,72 @@ function UserUpdateDialog({ user, onOpenChange, ...props }: UserUpdateDialogProp
         <DialogHeader>
           <DialogTitle>Edit user info</DialogTitle>
         </DialogHeader>
-        <UserForm form={form} onValidSubmit={handleSubmit}>
-          <DialogFooter className="col-span-2">
-            <Button type="submit">Save</Button>
-          </DialogFooter>
-        </UserForm>
+        <Form {...form}>
+          <form className="grid grid-cols-2 gap-4" onSubmit={form.handleSubmit(handleSubmit)}>
+            <FormField
+              name="firstName"
+              render={({ field }) => (
+                <FormItem className="col-span-1">
+                  <FormLabel required>First name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="lastName"
+              render={({ field }) => (
+                <FormItem className="col-span-1">
+                  <FormLabel required>Last name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="address"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="role"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Role</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.values(Role).map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {role}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter className="col-span-2">
+              <Button type="submit">Save</Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
@@ -270,6 +385,8 @@ function UserCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dial
   const form = useForm<CreateUserSchema>({
     resolver: zodResolver(createUserSchema),
     values: {
+      username: '',
+      password: '',
       firstName: '',
       lastName: '',
       address: '',
@@ -305,11 +422,96 @@ function UserCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dial
         <DialogHeader>
           <DialogTitle>Add new user</DialogTitle>
         </DialogHeader>
-        <UserForm form={form} onValidSubmit={handleSubmit}>
-          <DialogFooter className="col-span-2">
-            <Button type="submit">Add</Button>
-          </DialogFooter>
-        </UserForm>
+        <Form {...form}>
+          <form className="grid grid-cols-2 gap-4" onSubmit={form.handleSubmit(handleSubmit)}>
+            <FormField
+              name="username"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel required>Username</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="password"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel required>Password</FormLabel>
+                  <FormControl>
+                    <PasswordInput autoComplete="current-password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="firstName"
+              render={({ field }) => (
+                <FormItem className="col-span-1">
+                  <FormLabel required>First name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="lastName"
+              render={({ field }) => (
+                <FormItem className="col-span-1">
+                  <FormLabel required>Last name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="address"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="role"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Role</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.values(Role).map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {role}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter className="col-span-2">
+              <Button type="submit">Save</Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

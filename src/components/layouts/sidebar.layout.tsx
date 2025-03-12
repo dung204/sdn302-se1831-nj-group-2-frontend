@@ -57,7 +57,7 @@ export const navItems: Record<Role, NavItem[]> = {
       ],
     },
   ],
-  [Role.ADMIN]: [
+  [Role.BRANCH_ADMIN]: [
     {
       title: 'Dashboard',
       icon: <Gauge className="size-4" />,

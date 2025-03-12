@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableHeader, UserDataTable } from '@/components/ui/data-table';
 import { userHttpClient } from '@/lib/http';
 
@@ -63,11 +64,41 @@ export function ManageDeletedUsersPage() {
         data={res?.data ?? []}
         pagination={res?.meta.pagination}
         sorting={res?.meta.sorting}
+        filter={res?.meta.filter}
         onRowSelectionChange={setSelectedUsers}
         state={{
           rowSelection: selectedUsers,
         }}
         renderColumns={(existingColumns) => [
+          {
+            id: 'select',
+            header: ({ table }) => (
+              <Checkbox
+                checked={
+                  table.getIsAllPageRowsSelected() ||
+                  (table.getIsSomePageRowsSelected() && 'indeterminate')
+                }
+                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                title="Select all rows"
+              />
+            ),
+            cell: ({ row }) => {
+              if (row.original.id === user.id) {
+                return <></>;
+              }
+
+              return (
+                <Checkbox
+                  checked={row.getIsSelected()}
+                  onCheckedChange={(value) => row.toggleSelected(!!value)}
+                  title="Select this row"
+                />
+              );
+            },
+            enableSorting: false,
+            enableHiding: false,
+            enableResizing: false,
+          },
           ...existingColumns,
           {
             accessorKey: 'deleteTimestamp',
