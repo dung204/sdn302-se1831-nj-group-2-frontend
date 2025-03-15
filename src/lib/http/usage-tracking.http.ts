@@ -26,33 +26,33 @@ class UsageTrackingHttpClient extends HttpClient {
   }
 
   public getUsageTrackingById(id: string) {
-    return this.get<SuccessResponse<UsageTracking>>(`/UsageTrackings/${id}`, {
+    return this.get<SuccessResponse<UsageTracking>>(`/usage-tracking/${id}`, {
       isPrivateRoute: true,
     });
   }
 
   public createNewUsageTracking(payload: CreateUsageTrackingSchema) {
-    return this.post<SuccessResponse<UsageTracking>>('/UsageTrackings', payload, {
+    return this.post<SuccessResponse<UsageTracking>>('/usage-tracking', payload, {
       isPrivateRoute: true,
     });
   }
 
   public updateUsageTracking(id: string) {
     return (payload: UpdateUsageTrackingSchema) =>
-      this.patch<SuccessResponse<UsageTracking>>(`/UsageTrackings/${id}`, payload, {
+      this.patch<SuccessResponse<UsageTracking>>(`/usage-tracking/${id}`, payload, {
         isPrivateRoute: true,
       });
   }
 
   public softDeleteUsageTracking(id: string) {
-    return this.delete(`/UsageTrackings/${id}`, {
+    return this.delete(`/usage-tracking/${id}`, {
       isPrivateRoute: true,
     });
   }
 
   public restoreUsageTracking(id: string) {
     return this.patch<SuccessResponse<UsageTracking>>(
-      `/UsageTrackings/restore/${id}`,
+      `/usage-tracking/restore/${id}`,
       {},
       {
         isPrivateRoute: true,

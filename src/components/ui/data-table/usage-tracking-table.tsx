@@ -76,7 +76,7 @@ const usageTrackingDataTableColumns = [
   },
 ] as const satisfies ColumnDef<UsageTracking>[];
 
-export function UsageTracingDataTable({ renderColumns, ...props }: UsageTrackingDataTableProps) {
+export function UsageTrackingDataTable({ renderColumns, ...props }: UsageTrackingDataTableProps) {
   return (
     <DataTable
       getRowId={(row) => row.id}
