@@ -1,9 +1,9 @@
 import type { PropsWithChildren } from 'react';
 import { type UseFormHandleSubmit, type UseFormReturn } from 'react-hook-form';
 
-import { Role } from '@/common/types';
-import type { User } from '@/common/types/api/user';
+import { Role, type User } from '@/common/types/api/user';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import {
   Select,
   SelectContent,
@@ -12,14 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from './form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './form';
 
 interface UserFormProps<
   TFieldValues extends Partial<User> = Partial<User>,
@@ -27,12 +20,8 @@ interface UserFormProps<
   TTransformedValues extends Partial<User> | undefined = undefined,
 > extends PropsWithChildren {
   form: UseFormReturn<TFieldValues, TContext, undefined>;
-  onValidSubmit: Parameters<
-    UseFormHandleSubmit<TFieldValues, TTransformedValues>
-  >[0];
-  onInvalidSubmit?: Parameters<
-    UseFormHandleSubmit<TFieldValues, TTransformedValues>
-  >[1];
+  onValidSubmit: Parameters<UseFormHandleSubmit<TFieldValues, TTransformedValues>>[0];
+  onInvalidSubmit?: Parameters<UseFormHandleSubmit<TFieldValues, TTransformedValues>>[1];
 }
 
 export function UserForm<
@@ -51,6 +40,30 @@ export function UserForm<
         className="grid grid-cols-2 gap-4"
         onSubmit={form.handleSubmit(onValidSubmit, onInvalidSubmit)}
       >
+        <FormField
+          name="username"
+          render={({ field }) => (
+            <FormItem className="col-span-2">
+              <FormLabel required>Username</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          name="password"
+          render={({ field }) => (
+            <FormItem className="col-span-2">
+              <FormLabel required>Password</FormLabel>
+              <FormControl>
+                <PasswordInput autoComplete="current-password" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           name="firstName"
           render={({ field }) => (
@@ -99,8 +112,11 @@ export function UserForm<
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value={Role.ADMIN}>{Role.ADMIN}</SelectItem>
-                  <SelectItem value={Role.USER}>{Role.USER}</SelectItem>
+                  {Object.values(Role).map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {role}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <FormMessage />

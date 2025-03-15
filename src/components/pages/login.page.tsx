@@ -1,16 +1,17 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from '@tanstack/react-router';
+import { useMutation } from '@tanstack/react-query';
+import { Navigate, useNavigate } from '@tanstack/react-router';
+import { type AxiosError, HttpStatusCode } from 'axios';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 
+import { useAuth } from '@/common/hooks';
+import { localStorageService } from '@/common/services';
+import { LocalStorageKey } from '@/common/types';
 import { type LoginSchema, loginSchema } from '@/common/types/api/auth';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -20,11 +21,25 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { LoadingIndicator } from '@/components/ui/loading-indicator';
 import { PasswordInput } from '@/components/ui/password-input';
 import { ThemeToggler } from '@/components/ui/theme-toggler';
 import { cn } from '@/lib/cn';
+import { authHttpClient } from '@/lib/http';
 
 export function LoginPage() {
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user) {
+      document.title = 'Login | Internet Cafe Management';
+    }
+  }, [user]);
+
+  if (user) {
+    return <Navigate to="/" />;
+  }
+
   return (
     <div className="relative h-svh w-full">
       <ThemeToggler className="absolute right-6 top-6 z-20" />
@@ -37,22 +52,36 @@ export function LoginPage() {
   );
 }
 
-function LoginForm({
-  className,
-  ...props
-}: React.ComponentPropsWithoutRef<'div'>) {
+function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+  const { authenticate } = useAuth();
   const navigate = useNavigate();
 
   const form = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
     },
   });
 
-  const onSubmit = async () => {
-    navigate({ to: '/' });
+  const { mutateAsync: triggerLogin, isPending } = useMutation({
+    mutationFn: (payload: LoginSchema) => authHttpClient.login(payload),
+    onSuccess: async ({ data }) => {
+      const { accessToken, refreshToken } = data;
+      localStorageService.set(LocalStorageKey.ACCESS_TOKEN, accessToken);
+      localStorageService.set(LocalStorageKey.REFRESH_TOKEN, refreshToken);
+      await authenticate();
+      navigate({ to: '/', reloadDocument: true });
+    },
+    onError: (error: AxiosError) => {
+      if (error.status === HttpStatusCode.Unauthorized) {
+        toast.error('Username or password is incorrect.');
+      }
+    },
+  });
+
+  const onSubmit = async (payload: LoginSchema) => {
+    await triggerLogin(payload);
   };
 
   return (
@@ -61,7 +90,7 @@ function LoginForm({
         <CardHeader>
           <CardTitle className="text-center text-2xl">Login</CardTitle>
           <CardDescription className="text-center">
-            Enter your email below to login to your account
+            Enter your username & password below to continue
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -70,12 +99,12 @@ function LoginForm({
               <div className="flex flex-col gap-6">
                 <FormField
                   control={form.control}
-                  name="email"
+                  name="username"
                   render={({ field }) => (
                     <FormItem className="grid gap-2">
-                      <FormLabel required>Email</FormLabel>
+                      <FormLabel required>Username</FormLabel>
                       <FormControl>
-                        <Input placeholder="m@example.com" {...field} />
+                        <Input autoComplete="username" disabled={isPending} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -88,14 +117,18 @@ function LoginForm({
                     <FormItem className="grid gap-2">
                       <FormLabel required>Password</FormLabel>
                       <FormControl>
-                        <PasswordInput id="password" {...field} />
+                        <PasswordInput
+                          autoComplete="current-password"
+                          disabled={isPending}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full">
-                  Login
+                <Button type="submit" disabled={isPending} className="w-full">
+                  {isPending ? <LoadingIndicator /> : 'Login'}
                 </Button>
               </div>
             </form>

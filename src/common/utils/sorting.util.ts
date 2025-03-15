@@ -32,9 +32,7 @@ export class SortingUtils {
 
     const singleValueSchema = z
       .string()
-      .refine((val) =>
-        new RegExp(`^(${fields.join('|')})+:(asc|desc)$`, 'g').test(val),
-      );
+      .refine((val) => new RegExp(`^(${fields.join('|')})+:(asc|desc)$`, 'g').test(val));
 
     return singleValueSchema
       .or(z.array(singleValueSchema))
@@ -54,8 +52,7 @@ export class SortingUtils {
     sorting,
     ...payload
   }: TPayload) {
-    const sortingValues =
-      typeof sorting === 'string' ? sorting.split(',') : sorting;
+    const sortingValues = typeof sorting === 'string' ? sorting.split(',') : sorting;
 
     return {
       ...payload,

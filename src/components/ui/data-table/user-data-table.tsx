@@ -1,50 +1,22 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { type ComponentProps } from 'react';
 
-import type { User } from '@/common/types/api/user';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Role, type User } from '@/common/types/api/user';
 
-import { DataTable, DataTableHeader } from './data-table';
+import { DataTable, DataTableHeader, type FilterRule } from './data-table';
 
 const userDataTableColumns = [
-  {
-    id: 'select',
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && 'indeterminate')
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        title="Select all rows"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        title="Select this row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-    enableResizing: false,
-  },
   {
     accessorKey: 'id',
     header: ({ column }) => <DataTableHeader column={column} title="ID" />,
   },
   {
     accessorKey: 'firstName',
-    header: ({ column }) => (
-      <DataTableHeader column={column} title="First name" />
-    ),
+    header: ({ column }) => <DataTableHeader column={column} title="First name" />,
   },
   {
     accessorKey: 'lastName',
-    header: ({ column }) => (
-      <DataTableHeader column={column} title="Last name" />
-    ),
+    header: ({ column }) => <DataTableHeader column={column} title="Last name" />,
   },
   {
     accessorKey: 'address',
@@ -56,9 +28,7 @@ const userDataTableColumns = [
   },
   {
     accessorKey: 'createTimestamp',
-    header: ({ column }) => (
-      <DataTableHeader column={column} title="Created At" />
-    ),
+    header: ({ column }) => <DataTableHeader column={column} title="Created At" />,
     cell: ({ row }) => {
       const date = new Date(row.getValue<string>('createTimestamp'));
       const formattedDate = new Intl.DateTimeFormat('en-US', {
@@ -71,22 +41,31 @@ const userDataTableColumns = [
   },
 ] as const satisfies ColumnDef<User>[];
 
+const filterRules: FilterRule<User>[] = [
+  { field: 'firstName', type: 'text' },
+  { field: 'lastName', type: 'text' },
+  {
+    field: 'role',
+    type: 'select',
+    options: Object.values(Role).map((role) => ({ value: role, label: role })),
+    multiple: true,
+  },
+  { field: 'address', type: 'text' },
+  { field: 'createTimestamp', type: 'datetime' },
+];
+
 interface UserDataTableProps
   extends Omit<ComponentProps<typeof DataTable<User>>, 'columns' | 'getRowId'> {
-  renderColumns?: (
-    existingColumns: typeof userDataTableColumns,
-  ) => ColumnDef<User>[];
+  renderColumns?: (existingColumns: typeof userDataTableColumns) => ColumnDef<User>[];
 }
 
-export function UserDataTable({ renderColumns, ...props }: UserDataTableProps) {
+export function UserDataTable({ renderColumns, filter, ...props }: UserDataTableProps) {
   return (
     <DataTable
       getRowId={(row) => row.id}
-      columns={
-        !renderColumns
-          ? userDataTableColumns
-          : renderColumns(userDataTableColumns)
-      }
+      columns={!renderColumns ? userDataTableColumns : renderColumns(userDataTableColumns)}
+      filterRules={filterRules}
+      filter={filter}
       {...props}
     />
   );

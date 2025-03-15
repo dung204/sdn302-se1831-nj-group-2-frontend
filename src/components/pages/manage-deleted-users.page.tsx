@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useSearch } from '@tanstack/react-router';
+import { Navigate, getRouteApi, useNavigate } from '@tanstack/react-router';
 import type { RowSelectionState } from '@tanstack/react-table';
 import { Undo2 } from 'lucide-react';
-import { type ComponentProps, useState } from 'react';
+import { type ComponentProps, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { userSearchParamsSchema } from '@/common/types/api/user';
+import { useAuth } from '@/common/hooks';
+import type { SuccessResponse } from '@/common/types';
+import { Role, type User, userSearchParamsSchema } from '@/common/types/api/user';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,21 +18,37 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableHeader, UserDataTable } from '@/components/ui/data-table';
 import { userHttpClient } from '@/lib/http';
 
+const route = getRouteApi('/_non-auth-layout/users/deleted/');
+
 export function ManageDeletedUsersPage() {
-  const searchParams = userSearchParamsSchema.parse(
-    useSearch({ from: '/_non-auth-layout/users/deleted/' }),
-  );
+  const { user } = useAuth();
+  const searchParams = userSearchParamsSchema.parse(route.useSearch());
 
   const { data: res, isLoading } = useQuery({
-    queryKey: ['deleted-users', searchParams],
+    queryKey: ['deleted-users', 'all', searchParams],
     queryFn: () => userHttpClient.getAllDeletedUsers(searchParams),
   });
 
   const [selectedUsers, setSelectedUsers] = useState<RowSelectionState>({});
   const [isRestoreDialogOpen, setIsRestoreDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (user?.role === Role.OWNER) {
+      document.title = 'Deleted users | Internet Cafe Management';
+    }
+  }, [user]);
+
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  if (user!.role !== Role.OWNER) {
+    return <Navigate to="/" />;
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -46,17 +64,45 @@ export function ManageDeletedUsersPage() {
         data={res?.data ?? []}
         pagination={res?.meta.pagination}
         sorting={res?.meta.sorting}
+        filter={res?.meta.filter}
         onRowSelectionChange={setSelectedUsers}
         state={{
           rowSelection: selectedUsers,
         }}
         renderColumns={(existingColumns) => [
+          {
+            id: 'select',
+            header: ({ table }) => (
+              <Checkbox
+                checked={
+                  table.getIsAllPageRowsSelected() ||
+                  (table.getIsSomePageRowsSelected() && 'indeterminate')
+                }
+                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                title="Select all rows"
+              />
+            ),
+            cell: ({ row }) => {
+              if (row.original.id === user.id) {
+                return <></>;
+              }
+
+              return (
+                <Checkbox
+                  checked={row.getIsSelected()}
+                  onCheckedChange={(value) => row.toggleSelected(!!value)}
+                  title="Select this row"
+                />
+              );
+            },
+            enableSorting: false,
+            enableHiding: false,
+            enableResizing: false,
+          },
           ...existingColumns,
           {
             accessorKey: 'deleteTimestamp',
-            header: ({ column }) => (
-              <DataTableHeader column={column} title="Deleted At" />
-            ),
+            header: ({ column }) => <DataTableHeader column={column} title="Deleted At" />,
             cell: ({ row }) => {
               const date = new Date(row.getValue<string>('createTimestamp'));
               const formattedDate = new Intl.DateTimeFormat('en-US', {
@@ -84,29 +130,41 @@ interface UserRestoreDialogProps extends ComponentProps<typeof AlertDialog> {
   onRestore?: (restoredUserIds: string[]) => void;
 }
 
-function UserRestoreDialog({
-  userIds,
-  onRestore,
-  ...props
-}: UserRestoreDialogProps) {
+function UserRestoreDialog({ userIds, onRestore, ...props }: UserRestoreDialogProps) {
+  const searchParams = userSearchParamsSchema.parse(route.useSearch());
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { mutateAsync: triggerRestoreUser } = useMutation({
-    mutationFn: (id: string) => userHttpClient.restoreUser(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deleted-users'] });
+  const { mutateAsync: triggerRestoreUsers } = useMutation({
+    mutationFn: async (userIds: string[]) => {
+      const result = await Promise.allSettled(userIds.map((id) => userHttpClient.restoreUser(id)));
+      return Object.groupBy(result, (r) => r.status);
+    },
+    onSuccess: async ({ fulfilled, rejected }) => {
+      await queryClient.invalidateQueries({
+        queryKey: ['deleted-users', 'all'],
+      });
+      const res = queryClient.getQueryData<SuccessResponse<User[]>>([
+        'deleted-users',
+        'all',
+        searchParams,
+      ]);
+      if (res!.meta.pagination.page > res!.meta.pagination.totalPage) {
+        navigate({
+          to: '/users/deleted',
+          search: {
+            ...searchParams,
+            page: res!.meta.pagination.totalPage,
+          },
+        });
+      }
+      toast.info(`Result: ${fulfilled?.length || 0} deleted, ${rejected?.length || 0} failed`);
+      onRestore?.(userIds);
     },
   });
 
   const handleRestore = async () => {
-    const result = await Promise.allSettled(
-      userIds.map((id) => triggerRestoreUser(id)),
-    );
-    const { fulfilled, rejected } = Object.groupBy(result, (r) => r.status);
-    toast.info(
-      `Result: ${fulfilled?.length || 0} restored, ${rejected?.length || 0} failed`,
-    );
-    onRestore?.(userIds);
+    await triggerRestoreUsers(userIds);
   };
 
   return (

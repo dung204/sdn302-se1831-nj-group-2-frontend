@@ -8,6 +8,4 @@ export type FormFieldContextValue<
   name: TName;
 };
 
-export const FormFieldContext = createContext<FormFieldContextValue>(
-  {} as FormFieldContextValue,
-);
+export const FormFieldContext = createContext<FormFieldContextValue>({} as FormFieldContextValue);

@@ -1,3 +1,4 @@
+import type { Filter } from './filter.type';
 import type { Pagination } from './pagination.type';
 import type { Sorting } from './sorting.type';
 
@@ -7,6 +8,7 @@ export type SuccessResponse<T> = T extends unknown[]
       meta: {
         pagination: Pagination;
         sorting: Sorting[];
+        filter: Filter;
       };
     }
   : { data: T };

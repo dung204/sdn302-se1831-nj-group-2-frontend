@@ -15,9 +15,7 @@ import { Route as NonAuthLayoutImport } from './routes/_non-auth-layout';
 
 const LoginIndexLazyImport = createFileRoute('/login/')();
 const NonAuthLayoutIndexLazyImport = createFileRoute('/_non-auth-layout/')();
-const NonAuthLayoutUsersIndexLazyImport = createFileRoute(
-  '/_non-auth-layout/users/',
-)();
+const NonAuthLayoutUsersIndexLazyImport = createFileRoute('/_non-auth-layout/users/')();
 const NonAuthLayoutUsersDeletedIndexLazyImport = createFileRoute(
   '/_non-auth-layout/users/deleted/',
 )();
@@ -39,29 +37,21 @@ const NonAuthLayoutIndexLazyRoute = NonAuthLayoutIndexLazyImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => NonAuthLayoutRoute,
+} as any).lazy(() => import('./routes/_non-auth-layout/index.lazy').then((d) => d.Route));
+
+const NonAuthLayoutUsersIndexLazyRoute = NonAuthLayoutUsersIndexLazyImport.update({
+  id: '/users/',
+  path: '/users/',
+  getParentRoute: () => NonAuthLayoutRoute,
+} as any).lazy(() => import('./routes/_non-auth-layout/users/index.lazy').then((d) => d.Route));
+
+const NonAuthLayoutUsersDeletedIndexLazyRoute = NonAuthLayoutUsersDeletedIndexLazyImport.update({
+  id: '/users/deleted/',
+  path: '/users/deleted/',
+  getParentRoute: () => NonAuthLayoutRoute,
 } as any).lazy(() =>
-  import('./routes/_non-auth-layout/index.lazy').then((d) => d.Route),
+  import('./routes/_non-auth-layout/users/deleted/index.lazy').then((d) => d.Route),
 );
-
-const NonAuthLayoutUsersIndexLazyRoute =
-  NonAuthLayoutUsersIndexLazyImport.update({
-    id: '/users/',
-    path: '/users/',
-    getParentRoute: () => NonAuthLayoutRoute,
-  } as any).lazy(() =>
-    import('./routes/_non-auth-layout/users/index.lazy').then((d) => d.Route),
-  );
-
-const NonAuthLayoutUsersDeletedIndexLazyRoute =
-  NonAuthLayoutUsersDeletedIndexLazyImport.update({
-    id: '/users/deleted/',
-    path: '/users/deleted/',
-    getParentRoute: () => NonAuthLayoutRoute,
-  } as any).lazy(() =>
-    import('./routes/_non-auth-layout/users/deleted/index.lazy').then(
-      (d) => d.Route,
-    ),
-  );
 
 // Populate the FileRoutesByPath interface
 
@@ -116,8 +106,7 @@ interface NonAuthLayoutRouteChildren {
 const NonAuthLayoutRouteChildren: NonAuthLayoutRouteChildren = {
   NonAuthLayoutIndexLazyRoute: NonAuthLayoutIndexLazyRoute,
   NonAuthLayoutUsersIndexLazyRoute: NonAuthLayoutUsersIndexLazyRoute,
-  NonAuthLayoutUsersDeletedIndexLazyRoute:
-    NonAuthLayoutUsersDeletedIndexLazyRoute,
+  NonAuthLayoutUsersDeletedIndexLazyRoute: NonAuthLayoutUsersDeletedIndexLazyRoute,
 };
 
 const NonAuthLayoutRouteWithChildren = NonAuthLayoutRoute._addFileChildren(

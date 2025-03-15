@@ -4,7 +4,7 @@ import { Outlet } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { Toaster } from 'sonner';
 
-import { ThemeProvider } from '@/common/providers';
+import { AuthProvider, ThemeProvider } from '@/common/providers';
 import { envVariables } from '@/common/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -24,7 +24,9 @@ export function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <ScrollArea className="h-svh">
         <ThemeProvider>
-          <Outlet />
+          <AuthProvider>
+            <Outlet />
+          </AuthProvider>
           <Toaster closeButton richColors position="top-right" />
         </ThemeProvider>
         <Suspense>

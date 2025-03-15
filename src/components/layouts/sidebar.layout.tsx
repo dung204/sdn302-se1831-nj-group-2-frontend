@@ -1,13 +1,10 @@
 import { Link, useLocation } from '@tanstack/react-router';
-import { ChevronRight, Router } from 'lucide-react';
-import * as React from 'react';
+import { ChevronRight, Gauge, Router, User, UserX, UsersRound } from 'lucide-react';
+import { type ComponentProps, type ReactNode } from 'react';
 
-import { type NavItem, navItems } from '@/common/utils';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { useAuth } from '@/common/hooks';
+import { Role } from '@/common/types/api/user';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Sidebar,
   SidebarContent,
@@ -20,11 +17,72 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
+import type { FileRoutesByTo } from '@/routeTree.gen';
 
-export function SidebarLayout({
-  ...props
-}: React.ComponentProps<typeof Sidebar>) {
+type NavUrl = {
+  title: string;
+  icon?: ReactNode;
+  url: keyof FileRoutesByTo;
+};
+
+type NavGroup = {
+  title: string;
+  icon?: ReactNode;
+  urls: NavUrl[];
+};
+
+type NavItem = NavUrl | NavGroup;
+
+export const navItems: Record<Role, NavItem[]> = {
+  [Role.OWNER]: [
+    {
+      title: 'Dashboard',
+      icon: <Gauge className="size-4" />,
+      url: '/',
+    },
+    {
+      title: 'Users',
+      icon: <User className="size-4" />,
+      urls: [
+        {
+          title: 'Existing users',
+          icon: <UsersRound className="size-4" />,
+          url: '/users',
+        },
+        {
+          title: 'Deleted users',
+          icon: <UserX className="size-4" />,
+          url: '/users/deleted',
+        },
+      ],
+    },
+  ],
+  [Role.BRANCH_ADMIN]: [
+    {
+      title: 'Dashboard',
+      icon: <Gauge className="size-4" />,
+      url: '/',
+    },
+  ],
+  [Role.STAFF]: [
+    {
+      title: 'Dashboard',
+      icon: <Gauge className="size-4" />,
+      url: '/',
+    },
+  ],
+  [Role.GUEST]: [
+    {
+      title: 'Dashboard',
+      icon: <Gauge className="size-4" />,
+      url: '/',
+    },
+  ],
+};
+
+export function SidebarLayout({ ...props }: ComponentProps<typeof Sidebar>) {
   const location = useLocation();
+  const { user } = useAuth();
 
   return (
     <Sidebar {...props}>
@@ -42,7 +100,7 @@ export function SidebarLayout({
         </SidebarMenuButton>
       </SidebarHeader>
       <SidebarContent className="gap-0">
-        {navItems.map((item) => renderNavItem(item, location.pathname))}
+        {navItems[user!.role].map((item) => renderNavItem(item, location.pathname))}
       </SidebarContent>
     </Sidebar>
   );
@@ -67,12 +125,7 @@ function renderNavItem(item: NavItem, currentPathname: string) {
   }
 
   return (
-    <Collapsible
-      key={item.title}
-      title={item.title}
-      defaultOpen
-      className="group/collapsible"
-    >
+    <Collapsible key={item.title} title={item.title} defaultOpen className="group/collapsible">
       <SidebarGroup>
         <SidebarGroupLabel
           asChild
