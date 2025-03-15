@@ -1,13 +1,21 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, getRouteApi, useNavigate } from '@tanstack/react-router';
 import type { RowSelectionState } from '@tanstack/react-table';
 import { Edit, Ellipsis, Plus, Trash2 } from 'lucide-react';
 import { type ComponentProps, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/common/hooks';
 import type { SuccessResponse } from '@/common/types';
-import type { UsageTracking } from '@/common/types/api/usage-tracking';
+import {
+  type CreateUsageTrackingSchema,
+  type UpdateUsageTrackingSchema,
+  type UsageTracking,
+  createUsageTrackingSchema,
+  updateUsageTrackingSchema,
+} from '@/common/types/api/usage-tracking';
 import { usageTrackingSearchParamsSchema } from '@/common/types/api/usage-tracking/usage-tracking-search-params.type';
 import { Role } from '@/common/types/api/user';
 import {
@@ -23,11 +31,34 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { UsageTrackingDataTable } from '@/components/ui/data-table';
 import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { usageTrackingHttpClient } from '@/lib/http';
 
 // import { Checkbox } from '@/components/ui/checkbox';
@@ -45,11 +76,9 @@ export function ManageUsageTrackingPage() {
 
   const [usageTrackingToDelete, setUsageTrackingToDelete] = useState<RowSelectionState>({});
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [userToUpdate, setUserToUpdate] = useState<UsageTracking | null>(null);
+  const [usageTrackingToUpdate, setUsageToUpdate] = useState<UsageTracking | null>(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-
-  console.log(userToUpdate, isUpdateDialogOpen, isCreateDialogOpen);
 
   // incorrect role
   if (user?.role === Role.GUEST) {
@@ -133,7 +162,7 @@ export function ManageUsageTrackingPage() {
                       <DropdownMenuItem
                         onClick={(e) => e.stopPropagation()}
                         onSelect={() => {
-                          setUserToUpdate(row.original);
+                          setUsageToUpdate(row.original);
                           setIsUpdateDialogOpen(true);
                         }}
                       >
@@ -170,12 +199,12 @@ export function ManageUsageTrackingPage() {
         onOpenChange={setIsDeleteDialogOpen}
         onDelete={() => setUsageTrackingToDelete({})}
       />
-      {/* <UserUpdateDialog
-        user={userToUpdate!}
+      <UsageUpdateDialog
+        usageTracking={usageTrackingToUpdate!}
         open={isUpdateDialogOpen}
         onOpenChange={setIsUpdateDialogOpen}
       />
-      <UserCreateDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} /> */}
+      <UserCreateDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
     </>
   );
 }
@@ -243,252 +272,179 @@ function UserDeleteDialog({ userIds, onDelete, ...props }: UsageTrackingDeleteDi
   );
 }
 
-// interface UserUpdateDialogProps extends ComponentProps<typeof Dialog> {
-//   usageTracking: UsageTracking | null;
-// }
+interface UsageUpdateDialogProps extends ComponentProps<typeof Dialog> {
+  usageTracking: UsageTracking | null;
+}
 
-// function UserUpdateDialog({ user, onOpenChange, ...props }: UserUpdateDialogProps) {
-//   const form = useForm<UpdateUserSchema>({
-//     resolver: zodResolver(updateUserSchema),
-//     values: {
-//       firstName: !user ? '' : user.firstName,
-//       lastName: !user ? '' : user.lastName,
-//       address: !user ? '' : user.address,
-//       role: !user ? Role.GUEST : user.role,
-//     },
-//   });
+function UsageUpdateDialog({ usageTracking, onOpenChange, ...props }: UsageUpdateDialogProps) {
+  const form = useForm<UpdateUsageTrackingSchema>({
+    resolver: zodResolver(updateUsageTrackingSchema),
+    values: {
+      user: !usageTracking ? '' : usageTracking.user?.id,
+      computer: !usageTracking ? '' : usageTracking.computer?.id,
+      startTimeStamp: !usageTracking ? '' : usageTracking.startTimeStamp,
+      endTimestamp: !usageTracking ? '' : usageTracking.endTimestamp,
+    },
+  });
 
-//   const queryClient = useQueryClient();
-//   const { mutateAsync: triggerUpdateUser } = useMutation({
-//     mutationFn: userHttpClient.updateUser(user?.id ?? ''),
-//     onSuccess: async () => {
-//       await queryClient.invalidateQueries({ queryKey: ['users', 'all'] });
-//       toast.success('User updated successfully!');
-//       handleOpenChange(false);
-//     },
-//   });
+  const queryClient = useQueryClient();
+  const { mutateAsync: triggerUpdateUser } = useMutation({
+    mutationFn: usageTrackingHttpClient.updateUsageTracking(usageTracking?.id ?? ''),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['users', 'all'] });
+      toast.success('User updated successfully!');
+      handleOpenChange(false);
+    },
+  });
 
-//   const handleSubmit = async (payload: UpdateUserSchema) => {
-//     await triggerUpdateUser(payload);
-//   };
+  const handleSubmit = async (payload: UpdateUsageTrackingSchema) => {
+    await triggerUpdateUser(payload);
+  };
 
-//   const handleOpenChange = (open: boolean) => {
-//     if (!open) {
-//       form.reset();
-//     }
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      form.reset();
+    }
 
-//     onOpenChange?.(open);
-//   };
+    onOpenChange?.(open);
+  };
 
-//   return (
-//     <Dialog onOpenChange={handleOpenChange} {...props}>
-//       <DialogContent>
-//         <DialogHeader>
-//           <DialogTitle>Edit user info</DialogTitle>
-//         </DialogHeader>
-//         <Form {...form}>
-//           <form className="grid grid-cols-2 gap-4" onSubmit={form.handleSubmit(handleSubmit)}>
-//             <FormField
-//               name="firstName"
-//               render={({ field }) => (
-//                 <FormItem className="col-span-1">
-//                   <FormLabel required>First name</FormLabel>
-//                   <FormControl>
-//                     <Input {...field} />
-//                   </FormControl>
-//                   <FormMessage />
-//                 </FormItem>
-//               )}
-//             />
-//             <FormField
-//               name="lastName"
-//               render={({ field }) => (
-//                 <FormItem className="col-span-1">
-//                   <FormLabel required>Last name</FormLabel>
-//                   <FormControl>
-//                     <Input {...field} />
-//                   </FormControl>
-//                   <FormMessage />
-//                 </FormItem>
-//               )}
-//             />
-//             <FormField
-//               name="address"
-//               render={({ field }) => (
-//                 <FormItem className="col-span-2">
-//                   <FormLabel>Address</FormLabel>
-//                   <FormControl>
-//                     <Input {...field} />
-//                   </FormControl>
-//                   <FormMessage />
-//                 </FormItem>
-//               )}
-//             />
-//             <FormField
-//               name="role"
-//               render={({ field }) => (
-//                 <FormItem className="col-span-2">
-//                   <FormLabel>Role</FormLabel>
-//                   <Select onValueChange={field.onChange} value={field.value}>
-//                     <FormControl>
-//                       <SelectTrigger>
-//                         <SelectValue />
-//                       </SelectTrigger>
-//                     </FormControl>
-//                     <SelectContent>
-//                       {Object.values(Role).map((role) => (
-//                         <SelectItem key={role} value={role}>
-//                           {role}
-//                         </SelectItem>
-//                       ))}
-//                     </SelectContent>
-//                   </Select>
-//                   <FormMessage />
-//                 </FormItem>
-//               )}
-//             />
-//             <DialogFooter className="col-span-2">
-//               <Button type="submit">Save</Button>
-//             </DialogFooter>
-//           </form>
-//         </Form>
-//       </DialogContent>
-//     </Dialog>
-//   );
-// }
+  return (
+    <Dialog onOpenChange={handleOpenChange} {...props}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit new usage tracking</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form className="grid grid-cols-2 gap-4" onSubmit={form.handleSubmit(handleSubmit)}>
+            <FormField
+              name="user"
+              render={({ field }) => (
+                <FormItem className="col-span-1">
+                  <FormLabel required>User</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="computer"
+              render={({ field }) => (
+                <FormItem className="col-span-1">
+                  <FormLabel required>Computer</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {/* <FormField
+              name="role"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Role</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.values(Role).map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {role}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            /> */}
+            <DialogFooter className="col-span-2">
+              <Button type="submit">Save</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
-// function UserCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dialog>) {
-//   const form = useForm<CreateUserSchema>({
-//     resolver: zodResolver(createUserSchema),
-//     values: {
-//       username: '',
-//       password: '',
-//       firstName: '',
-//       lastName: '',
-//       address: '',
-//       role: Role.GUEST,
-//     },
-//   });
+function UserCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dialog>) {
+  const form = useForm<CreateUsageTrackingSchema>({
+    resolver: zodResolver(createUsageTrackingSchema),
+    values: {
+      user: '',
+      computer: '',
+      startTimeStamp: '',
+      endTimestamp: '',
+    },
+  });
 
-//   const queryClient = useQueryClient();
-//   const { mutateAsync: triggerUpdateUser } = useMutation({
-//     mutationFn: (payload: CreateUserSchema) => userHttpClient.createNewUser(payload),
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ['users', 'all'] });
-//       toast.success('User created successfully!');
-//       handleOpenChange(false);
-//     },
-//   });
+  const queryClient = useQueryClient();
+  const { mutateAsync: triggerUpdateUser } = useMutation({
+    mutationFn: (payload: CreateUsageTrackingSchema) =>
+      usageTrackingHttpClient.createNewUsageTracking(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users', 'all'] });
+      toast.success('User created successfully!');
+      handleOpenChange(false);
+    },
+  });
 
-//   const handleSubmit = async (values: CreateUserSchema) => {
-//     await triggerUpdateUser(values);
-//   };
+  const handleSubmit = async (values: CreateUsageTrackingSchema) => {
+    await triggerUpdateUser(values);
+  };
 
-//   const handleOpenChange = (open: boolean) => {
-//     if (!open) {
-//       form.reset();
-//     }
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      form.reset();
+    }
 
-//     onOpenChange?.(open);
-//   };
+    onOpenChange?.(open);
+  };
 
-//   return (
-//     <Dialog onOpenChange={handleOpenChange} {...props}>
-//       <DialogContent>
-//         <DialogHeader>
-//           <DialogTitle>Add new user</DialogTitle>
-//         </DialogHeader>
-//         <Form {...form}>
-//           <form className="grid grid-cols-2 gap-4" onSubmit={form.handleSubmit(handleSubmit)}>
-//             <FormField
-//               name="username"
-//               render={({ field }) => (
-//                 <FormItem className="col-span-2">
-//                   <FormLabel required>Username</FormLabel>
-//                   <FormControl>
-//                     <Input {...field} />
-//                   </FormControl>
-//                   <FormMessage />
-//                 </FormItem>
-//               )}
-//             />
-//             <FormField
-//               name="password"
-//               render={({ field }) => (
-//                 <FormItem className="col-span-2">
-//                   <FormLabel required>Password</FormLabel>
-//                   <FormControl>
-//                     <PasswordInput autoComplete="current-password" {...field} />
-//                   </FormControl>
-//                   <FormMessage />
-//                 </FormItem>
-//               )}
-//             />
-//             <FormField
-//               name="firstName"
-//               render={({ field }) => (
-//                 <FormItem className="col-span-1">
-//                   <FormLabel required>First name</FormLabel>
-//                   <FormControl>
-//                     <Input {...field} />
-//                   </FormControl>
-//                   <FormMessage />
-//                 </FormItem>
-//               )}
-//             />
-//             <FormField
-//               name="lastName"
-//               render={({ field }) => (
-//                 <FormItem className="col-span-1">
-//                   <FormLabel required>Last name</FormLabel>
-//                   <FormControl>
-//                     <Input {...field} />
-//                   </FormControl>
-//                   <FormMessage />
-//                 </FormItem>
-//               )}
-//             />
-//             <FormField
-//               name="address"
-//               render={({ field }) => (
-//                 <FormItem className="col-span-2">
-//                   <FormLabel>Address</FormLabel>
-//                   <FormControl>
-//                     <Input {...field} />
-//                   </FormControl>
-//                   <FormMessage />
-//                 </FormItem>
-//               )}
-//             />
-//             <FormField
-//               name="role"
-//               render={({ field }) => (
-//                 <FormItem className="col-span-2">
-//                   <FormLabel>Role</FormLabel>
-//                   <Select onValueChange={field.onChange} value={field.value}>
-//                     <FormControl>
-//                       <SelectTrigger>
-//                         <SelectValue />
-//                       </SelectTrigger>
-//                     </FormControl>
-//                     <SelectContent>
-//                       {Object.values(Role).map((role) => (
-//                         <SelectItem key={role} value={role}>
-//                           {role}
-//                         </SelectItem>
-//                       ))}
-//                     </SelectContent>
-//                   </Select>
-//                   <FormMessage />
-//                 </FormItem>
-//               )}
-//             />
-//             <DialogFooter className="col-span-2">
-//               <Button type="submit">Save</Button>
-//             </DialogFooter>
-//           </form>
-//         </Form>
-//       </DialogContent>
-//     </Dialog>
-//   );
-// }
+  return (
+    <Dialog onOpenChange={handleOpenChange} {...props}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add new usage tracking</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form className="grid grid-cols-2 gap-4" onSubmit={form.handleSubmit(handleSubmit)}>
+            <FormField
+              name="role"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Role</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.values(Role).map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {role}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter className="col-span-2">
+              <Button type="submit">Save</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
