@@ -7,7 +7,7 @@ import { Role } from '@/common/types/api/user';
 import { UsageTracingDataTable } from '@/components/ui/data-table';
 import { usageTrackingHttpClient } from '@/lib/http';
 
-const route = getRouteApi('/_non-auth-layout/usage-tracking/');
+const route = getRouteApi('/_non-auth-layout/usage-tracking/deleted/');
 
 export function ManageUsageTrackingDeletedPage() {
   const { user } = useAuth();
