@@ -28,6 +28,9 @@ const NonAuthLayoutUsageTrackingIndexLazyImport = createFileRoute(
 const NonAuthLayoutUsersDeletedIndexLazyImport = createFileRoute(
   '/_non-auth-layout/users/deleted/',
 )()
+const NonAuthLayoutUsageTrackingDeletedIndexLazyImport = createFileRoute(
+  '/_non-auth-layout/usage-tracking/deleted/',
+)()
 
 // Create/Update Routes
 
@@ -81,6 +84,17 @@ const NonAuthLayoutUsersDeletedIndexLazyRoute =
     ),
   )
 
+const NonAuthLayoutUsageTrackingDeletedIndexLazyRoute =
+  NonAuthLayoutUsageTrackingDeletedIndexLazyImport.update({
+    id: '/usage-tracking/deleted/',
+    path: '/usage-tracking/deleted/',
+    getParentRoute: () => NonAuthLayoutRoute,
+  } as any).lazy(() =>
+    import('./routes/_non-auth-layout/usage-tracking/deleted/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
@@ -120,6 +134,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NonAuthLayoutUsersIndexLazyImport
       parentRoute: typeof NonAuthLayoutImport
     }
+    '/_non-auth-layout/usage-tracking/deleted/': {
+      id: '/_non-auth-layout/usage-tracking/deleted/'
+      path: '/usage-tracking/deleted'
+      fullPath: '/usage-tracking/deleted'
+      preLoaderRoute: typeof NonAuthLayoutUsageTrackingDeletedIndexLazyImport
+      parentRoute: typeof NonAuthLayoutImport
+    }
     '/_non-auth-layout/users/deleted/': {
       id: '/_non-auth-layout/users/deleted/'
       path: '/users/deleted'
@@ -136,6 +157,7 @@ interface NonAuthLayoutRouteChildren {
   NonAuthLayoutIndexLazyRoute: typeof NonAuthLayoutIndexLazyRoute
   NonAuthLayoutUsageTrackingIndexLazyRoute: typeof NonAuthLayoutUsageTrackingIndexLazyRoute
   NonAuthLayoutUsersIndexLazyRoute: typeof NonAuthLayoutUsersIndexLazyRoute
+  NonAuthLayoutUsageTrackingDeletedIndexLazyRoute: typeof NonAuthLayoutUsageTrackingDeletedIndexLazyRoute
   NonAuthLayoutUsersDeletedIndexLazyRoute: typeof NonAuthLayoutUsersDeletedIndexLazyRoute
 }
 
@@ -144,6 +166,8 @@ const NonAuthLayoutRouteChildren: NonAuthLayoutRouteChildren = {
   NonAuthLayoutUsageTrackingIndexLazyRoute:
     NonAuthLayoutUsageTrackingIndexLazyRoute,
   NonAuthLayoutUsersIndexLazyRoute: NonAuthLayoutUsersIndexLazyRoute,
+  NonAuthLayoutUsageTrackingDeletedIndexLazyRoute:
+    NonAuthLayoutUsageTrackingDeletedIndexLazyRoute,
   NonAuthLayoutUsersDeletedIndexLazyRoute:
     NonAuthLayoutUsersDeletedIndexLazyRoute,
 }
@@ -158,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginIndexLazyRoute
   '/usage-tracking': typeof NonAuthLayoutUsageTrackingIndexLazyRoute
   '/users': typeof NonAuthLayoutUsersIndexLazyRoute
+  '/usage-tracking/deleted': typeof NonAuthLayoutUsageTrackingDeletedIndexLazyRoute
   '/users/deleted': typeof NonAuthLayoutUsersDeletedIndexLazyRoute
 }
 
@@ -166,6 +191,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginIndexLazyRoute
   '/usage-tracking': typeof NonAuthLayoutUsageTrackingIndexLazyRoute
   '/users': typeof NonAuthLayoutUsersIndexLazyRoute
+  '/usage-tracking/deleted': typeof NonAuthLayoutUsageTrackingDeletedIndexLazyRoute
   '/users/deleted': typeof NonAuthLayoutUsersDeletedIndexLazyRoute
 }
 
@@ -176,6 +202,7 @@ export interface FileRoutesById {
   '/login/': typeof LoginIndexLazyRoute
   '/_non-auth-layout/usage-tracking/': typeof NonAuthLayoutUsageTrackingIndexLazyRoute
   '/_non-auth-layout/users/': typeof NonAuthLayoutUsersIndexLazyRoute
+  '/_non-auth-layout/usage-tracking/deleted/': typeof NonAuthLayoutUsageTrackingDeletedIndexLazyRoute
   '/_non-auth-layout/users/deleted/': typeof NonAuthLayoutUsersDeletedIndexLazyRoute
 }
 
@@ -187,9 +214,16 @@ export interface FileRouteTypes {
     | '/login'
     | '/usage-tracking'
     | '/users'
+    | '/usage-tracking/deleted'
     | '/users/deleted'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/usage-tracking' | '/users' | '/users/deleted'
+  to:
+    | '/'
+    | '/login'
+    | '/usage-tracking'
+    | '/users'
+    | '/usage-tracking/deleted'
+    | '/users/deleted'
   id:
     | '__root__'
     | '/_non-auth-layout'
@@ -197,6 +231,7 @@ export interface FileRouteTypes {
     | '/login/'
     | '/_non-auth-layout/usage-tracking/'
     | '/_non-auth-layout/users/'
+    | '/_non-auth-layout/usage-tracking/deleted/'
     | '/_non-auth-layout/users/deleted/'
   fileRoutesById: FileRoutesById
 }
@@ -231,6 +266,7 @@ export const routeTree = rootRoute
         "/_non-auth-layout/",
         "/_non-auth-layout/usage-tracking/",
         "/_non-auth-layout/users/",
+        "/_non-auth-layout/usage-tracking/deleted/",
         "/_non-auth-layout/users/deleted/"
       ]
     },
@@ -247,6 +283,10 @@ export const routeTree = rootRoute
     },
     "/_non-auth-layout/users/": {
       "filePath": "_non-auth-layout/users/index.lazy.tsx",
+      "parent": "/_non-auth-layout"
+    },
+    "/_non-auth-layout/usage-tracking/deleted/": {
+      "filePath": "_non-auth-layout/usage-tracking/deleted/index.lazy.tsx",
       "parent": "/_non-auth-layout"
     },
     "/_non-auth-layout/users/deleted/": {

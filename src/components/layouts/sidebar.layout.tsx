@@ -65,11 +65,11 @@ export const navItems: Record<Role, NavItem[]> = {
           icon: <UsersRound className="size-4" />,
           url: '/usage-tracking',
         },
-        // {
-        //   title: 'Deleted usage tracking',
-        //   icon: <UserX className="size-4" />,
-        //   url: '/usage-tracking/deleted',
-        // },
+        {
+          title: 'Deleted usage tracking',
+          icon: <UserX className="size-4" />,
+          url: '/usage-tracking/deleted',
+        },
       ],
     },
   ],
