@@ -51,7 +51,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -59,7 +58,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { usageTrackingHttpClient } from '@/lib/http';
+import { computerHttpClient, usageTrackingHttpClient, userHttpClient } from '@/lib/http';
 
 // import { Checkbox } from '@/components/ui/checkbox';
 
@@ -287,12 +286,22 @@ function UsageUpdateDialog({ usageTracking, onOpenChange, ...props }: UsageUpdat
     },
   });
 
+  const { data: users } = useQuery({
+    queryKey: ['users', 'all'],
+    queryFn: () => userHttpClient.getAllUsers(),
+  });
+
+  const { data: computers } = useQuery({
+    queryKey: ['computers', 'all'],
+    queryFn: () => computerHttpClient.getAllComputer(),
+  });
+
   const queryClient = useQueryClient();
   const { mutateAsync: triggerUpdateUser } = useMutation({
     mutationFn: usageTrackingHttpClient.updateUsageTracking(usageTracking?.id ?? ''),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['users', 'all'] });
-      toast.success('User updated successfully!');
+      await queryClient.invalidateQueries({ queryKey: ['usage-tracking', 'all'] });
+      toast.success('Usage tracking updated successfully!');
       handleOpenChange(false);
     },
   });
@@ -320,32 +329,8 @@ function UsageUpdateDialog({ usageTracking, onOpenChange, ...props }: UsageUpdat
             <FormField
               name="user"
               render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel required>User</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name="computer"
-              render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel required>Computer</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {/* <FormField
-              name="role"
-              render={({ field }) => (
                 <FormItem className="col-span-2">
-                  <FormLabel>Role</FormLabel>
+                  <FormLabel>User</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -353,9 +338,9 @@ function UsageUpdateDialog({ usageTracking, onOpenChange, ...props }: UsageUpdat
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {Object.values(Role).map((role) => (
-                        <SelectItem key={role} value={role}>
-                          {role}
+                      {Object.values(users?.data ?? []).map((user) => (
+                        <SelectItem key={user?.id} value={user?.id}>
+                          {user?.firstName}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -363,7 +348,30 @@ function UsageUpdateDialog({ usageTracking, onOpenChange, ...props }: UsageUpdat
                   <FormMessage />
                 </FormItem>
               )}
-            /> */}
+            />
+            <FormField
+              name="computer"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Computer</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.values(computers?.data ?? []).map((computer) => (
+                        <SelectItem key={computer?.id} value={computer?.id}>
+                          {computer?.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter className="col-span-2">
               <Button type="submit">Save</Button>
             </DialogFooter>
@@ -383,6 +391,16 @@ function UserCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dial
       startTimeStamp: '',
       endTimestamp: '',
     },
+  });
+
+  const { data: users } = useQuery({
+    queryKey: ['users', 'all'],
+    queryFn: () => userHttpClient.getAllUsers(),
+  });
+
+  const { data: computers } = useQuery({
+    queryKey: ['computers', 'all'],
+    queryFn: () => computerHttpClient.getAllComputer(),
   });
 
   const queryClient = useQueryClient();
@@ -417,10 +435,10 @@ function UserCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dial
         <Form {...form}>
           <form className="grid grid-cols-2 gap-4" onSubmit={form.handleSubmit(handleSubmit)}>
             <FormField
-              name="role"
+              name="user"
               render={({ field }) => (
                 <FormItem className="col-span-2">
-                  <FormLabel>Role</FormLabel>
+                  <FormLabel>User</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -428,9 +446,32 @@ function UserCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dial
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {Object.values(Role).map((role) => (
-                        <SelectItem key={role} value={role}>
-                          {role}
+                      {Object.values(users?.data ?? []).map((user) => (
+                        <SelectItem key={user?.id} value={user?.id}>
+                          {user?.firstName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="computer"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Computer</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.values(computers?.data ?? []).map((computer) => (
+                        <SelectItem key={computer?.id} value={computer?.id}>
+                          {computer?.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
