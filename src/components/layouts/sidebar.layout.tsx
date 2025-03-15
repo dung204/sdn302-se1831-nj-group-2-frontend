@@ -56,6 +56,22 @@ export const navItems: Record<Role, NavItem[]> = {
         },
       ],
     },
+    {
+      title: 'Computers',
+      icon: <User className="size-4" />,
+      urls: [
+        {
+          title: 'Existing computers',
+          icon: <UsersRound className="size-4" />,
+          url: '/computers',
+        },
+        // {
+        //   title: 'Deleted users',
+        //   icon: <UserX className="size-4" />,
+        //   url: '/users/deleted',
+        // },
+      ],
+    },
   ],
   [Role.BRANCH_ADMIN]: [
     {

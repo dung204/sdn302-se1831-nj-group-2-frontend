@@ -73,6 +73,7 @@ export function ManageUsersPage() {
     queryFn: () => userHttpClient.getAllUsers(searchParams),
   });
 
+  console.log('res', res);
   const [usersToDelete, setUsersToDelete] = useState<RowSelectionState>({});
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [userToUpdate, setUserToUpdate] = useState<User | null>(null);
