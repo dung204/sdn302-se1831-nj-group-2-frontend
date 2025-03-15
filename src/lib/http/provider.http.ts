@@ -8,7 +8,7 @@ class ProviderHttpClient extends HttpClient {
   }
 
   public getAllProviders(params?: CommonSearchParams) {
-    return this.get<SuccessResponse<Provider>>('/providers', {
+    return this.get<SuccessResponse<Provider[]>>('/providers', {
       params,
       isPrivateRoute: true,
     });

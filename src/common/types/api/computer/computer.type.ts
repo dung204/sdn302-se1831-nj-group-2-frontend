@@ -18,4 +18,5 @@ export type Computer = {
       status: string;
     },
   ];
+  createTimestamp: string;
 };

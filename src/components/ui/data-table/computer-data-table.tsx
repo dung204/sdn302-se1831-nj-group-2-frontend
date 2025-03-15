@@ -86,34 +86,7 @@ const computerDataTableColumns = [
       return <span>{formattedDate}</span>; // Display the formatted date
     },
   },
-
-  //   {
-  //     accessorKey: 'createTimestamp',
-  //     header: ({ column }) => <DataTableHeader column={column} title="Created At" />,
-  //     cell: ({ row }) => {
-  //       const date = new Date(row.getValue<string>('createTimestamp'));
-  //       const formattedDate = new Intl.DateTimeFormat('en-US', {
-  //         dateStyle: 'medium',
-  //         timeStyle: 'long',
-  //       }).format(date);
-
-  //       return <span>{formattedDate}</span>; // Định dạng và hiển thị thời gian tạo
-  //     },
-  //   },
 ] as const satisfies ColumnDef<Computer>[];
-
-// const filterRules: FilterRule<User>[] = [
-//   { field: 'firstName', type: 'text' },
-//   { field: 'lastName', type: 'text' },
-//   {
-//     field: 'role',
-//     type: 'select',
-//     options: Object.values(Role).map((role) => ({ value: role, label: role })),
-//     multiple: true,
-//   },
-//   { field: 'address', type: 'text' },
-//   { field: 'createTimestamp', type: 'datetime' },
-// ];
 
 interface ComputerDataTableProps
   extends Omit<ComponentProps<typeof DataTable<Computer>>, 'columns' | 'getRowId'> {

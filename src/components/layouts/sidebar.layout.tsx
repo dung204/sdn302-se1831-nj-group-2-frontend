@@ -1,5 +1,15 @@
 import { Link, useLocation } from '@tanstack/react-router';
-import { ChevronRight, Gauge, Router, User, UserX, UsersRound } from 'lucide-react';
+import {
+  ChevronRight,
+  Gauge,
+  Monitor,
+  MonitorUp,
+  MonitorX,
+  Router,
+  User,
+  UserX,
+  UsersRound,
+} from 'lucide-react';
 import { type ComponentProps, type ReactNode } from 'react';
 
 import { useAuth } from '@/common/hooks';
@@ -58,18 +68,18 @@ export const navItems: Record<Role, NavItem[]> = {
     },
     {
       title: 'Computers',
-      icon: <User className="size-4" />,
+      icon: <Monitor className="size-4" />,
       urls: [
         {
           title: 'Existing computers',
-          icon: <UsersRound className="size-4" />,
+          icon: <MonitorUp className="size-4" />,
           url: '/computers',
         },
-        // {
-        //   title: 'Deleted users',
-        //   icon: <UserX className="size-4" />,
-        //   url: '/users/deleted',
-        // },
+        {
+          title: 'Deleted computers',
+          icon: <MonitorX className="size-4" />,
+          url: '/computers/deleted',
+        },
       ],
     },
   ],

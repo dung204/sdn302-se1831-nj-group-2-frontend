@@ -8,7 +8,7 @@ class PositionHttpClient extends HttpClient {
   }
 
   public getAllPositions(params?: CommonSearchParams) {
-    return this.get<SuccessResponse<Position>>('/positions', {
+    return this.get<SuccessResponse<Position[]>>('/positions', {
       params,
       isPrivateRoute: true,
     });
