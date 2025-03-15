@@ -1,16 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
-import { Navigate } from '@tanstack/react-router';
+import { Navigate, getRouteApi } from '@tanstack/react-router';
 
 import { useAuth } from '@/common/hooks';
+import { usageTrackingSearchParamsSchema } from '@/common/types/api/usage-tracking/usage-tracking-search-params.type';
 import { Role } from '@/common/types/api/user';
 import { UsageTracingDataTable } from '@/components/ui/data-table';
 import { usageTrackingHttpClient } from '@/lib/http';
 
+const route = getRouteApi('/_non-auth-layout/usage-tracking/');
+
 export function ManageUsageTrackingPage() {
   const { user } = useAuth();
+  const searchParams = usageTrackingSearchParamsSchema.parse(route.useSearch());
   const { data: res, isLoading } = useQuery({
-    queryKey: ['usage-tracking', 'all'],
-    queryFn: () => usageTrackingHttpClient.getAllUsageTrackings(),
+    queryKey: ['usage-tracking', 'all', searchParams],
+    queryFn: () => usageTrackingHttpClient.getAllUsageTrackings(searchParams),
   });
 
   // incorrect role
