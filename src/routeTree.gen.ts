@@ -16,8 +16,14 @@ import { Route as NonAuthLayoutImport } from './routes/_non-auth-layout';
 const LoginIndexLazyImport = createFileRoute('/login/')();
 const NonAuthLayoutIndexLazyImport = createFileRoute('/_non-auth-layout/')();
 const NonAuthLayoutUsersIndexLazyImport = createFileRoute('/_non-auth-layout/users/')();
+const NonAuthLayoutServiceCategoriesIndexLazyImport = createFileRoute(
+  '/_non-auth-layout/service-categories/',
+)();
 const NonAuthLayoutUsersDeletedIndexLazyImport = createFileRoute(
   '/_non-auth-layout/users/deleted/',
+)();
+const NonAuthLayoutServiceCategoriesDeletedIndexLazyImport = createFileRoute(
+  '/_non-auth-layout/service-categories/deleted/',
 )();
 
 // Create/Update Routes
@@ -45,6 +51,15 @@ const NonAuthLayoutUsersIndexLazyRoute = NonAuthLayoutUsersIndexLazyImport.updat
   getParentRoute: () => NonAuthLayoutRoute,
 } as any).lazy(() => import('./routes/_non-auth-layout/users/index.lazy').then((d) => d.Route));
 
+const NonAuthLayoutServiceCategoriesIndexLazyRoute =
+  NonAuthLayoutServiceCategoriesIndexLazyImport.update({
+    id: '/service-categories/',
+    path: '/service-categories/',
+    getParentRoute: () => NonAuthLayoutRoute,
+  } as any).lazy(() =>
+    import('./routes/_non-auth-layout/service-categories/index.lazy').then((d) => d.Route),
+  );
+
 const NonAuthLayoutUsersDeletedIndexLazyRoute = NonAuthLayoutUsersDeletedIndexLazyImport.update({
   id: '/users/deleted/',
   path: '/users/deleted/',
@@ -52,6 +67,15 @@ const NonAuthLayoutUsersDeletedIndexLazyRoute = NonAuthLayoutUsersDeletedIndexLa
 } as any).lazy(() =>
   import('./routes/_non-auth-layout/users/deleted/index.lazy').then((d) => d.Route),
 );
+
+const NonAuthLayoutServiceCategoriesDeletedIndexLazyRoute =
+  NonAuthLayoutServiceCategoriesDeletedIndexLazyImport.update({
+    id: '/service-categories/deleted/',
+    path: '/service-categories/deleted/',
+    getParentRoute: () => NonAuthLayoutRoute,
+  } as any).lazy(() =>
+    import('./routes/_non-auth-layout/service-categories/deleted/index.lazy').then((d) => d.Route),
+  );
 
 // Populate the FileRoutesByPath interface
 
@@ -78,11 +102,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginIndexLazyImport;
       parentRoute: typeof rootRoute;
     };
+    '/_non-auth-layout/service-categories/': {
+      id: '/_non-auth-layout/service-categories/';
+      path: '/service-categories';
+      fullPath: '/service-categories';
+      preLoaderRoute: typeof NonAuthLayoutServiceCategoriesIndexLazyImport;
+      parentRoute: typeof NonAuthLayoutImport;
+    };
     '/_non-auth-layout/users/': {
       id: '/_non-auth-layout/users/';
       path: '/users';
       fullPath: '/users';
       preLoaderRoute: typeof NonAuthLayoutUsersIndexLazyImport;
+      parentRoute: typeof NonAuthLayoutImport;
+    };
+    '/_non-auth-layout/service-categories/deleted/': {
+      id: '/_non-auth-layout/service-categories/deleted/';
+      path: '/service-categories/deleted';
+      fullPath: '/service-categories/deleted';
+      preLoaderRoute: typeof NonAuthLayoutServiceCategoriesDeletedIndexLazyImport;
       parentRoute: typeof NonAuthLayoutImport;
     };
     '/_non-auth-layout/users/deleted/': {
@@ -99,13 +137,18 @@ declare module '@tanstack/react-router' {
 
 interface NonAuthLayoutRouteChildren {
   NonAuthLayoutIndexLazyRoute: typeof NonAuthLayoutIndexLazyRoute;
+  NonAuthLayoutServiceCategoriesIndexLazyRoute: typeof NonAuthLayoutServiceCategoriesIndexLazyRoute;
   NonAuthLayoutUsersIndexLazyRoute: typeof NonAuthLayoutUsersIndexLazyRoute;
+  NonAuthLayoutServiceCategoriesDeletedIndexLazyRoute: typeof NonAuthLayoutServiceCategoriesDeletedIndexLazyRoute;
   NonAuthLayoutUsersDeletedIndexLazyRoute: typeof NonAuthLayoutUsersDeletedIndexLazyRoute;
 }
 
 const NonAuthLayoutRouteChildren: NonAuthLayoutRouteChildren = {
   NonAuthLayoutIndexLazyRoute: NonAuthLayoutIndexLazyRoute,
+  NonAuthLayoutServiceCategoriesIndexLazyRoute: NonAuthLayoutServiceCategoriesIndexLazyRoute,
   NonAuthLayoutUsersIndexLazyRoute: NonAuthLayoutUsersIndexLazyRoute,
+  NonAuthLayoutServiceCategoriesDeletedIndexLazyRoute:
+    NonAuthLayoutServiceCategoriesDeletedIndexLazyRoute,
   NonAuthLayoutUsersDeletedIndexLazyRoute: NonAuthLayoutUsersDeletedIndexLazyRoute,
 };
 
@@ -117,14 +160,18 @@ export interface FileRoutesByFullPath {
   '': typeof NonAuthLayoutRouteWithChildren;
   '/': typeof NonAuthLayoutIndexLazyRoute;
   '/login': typeof LoginIndexLazyRoute;
+  '/service-categories': typeof NonAuthLayoutServiceCategoriesIndexLazyRoute;
   '/users': typeof NonAuthLayoutUsersIndexLazyRoute;
+  '/service-categories/deleted': typeof NonAuthLayoutServiceCategoriesDeletedIndexLazyRoute;
   '/users/deleted': typeof NonAuthLayoutUsersDeletedIndexLazyRoute;
 }
 
 export interface FileRoutesByTo {
   '/': typeof NonAuthLayoutIndexLazyRoute;
   '/login': typeof LoginIndexLazyRoute;
+  '/service-categories': typeof NonAuthLayoutServiceCategoriesIndexLazyRoute;
   '/users': typeof NonAuthLayoutUsersIndexLazyRoute;
+  '/service-categories/deleted': typeof NonAuthLayoutServiceCategoriesDeletedIndexLazyRoute;
   '/users/deleted': typeof NonAuthLayoutUsersDeletedIndexLazyRoute;
 }
 
@@ -133,21 +180,38 @@ export interface FileRoutesById {
   '/_non-auth-layout': typeof NonAuthLayoutRouteWithChildren;
   '/_non-auth-layout/': typeof NonAuthLayoutIndexLazyRoute;
   '/login/': typeof LoginIndexLazyRoute;
+  '/_non-auth-layout/service-categories/': typeof NonAuthLayoutServiceCategoriesIndexLazyRoute;
   '/_non-auth-layout/users/': typeof NonAuthLayoutUsersIndexLazyRoute;
+  '/_non-auth-layout/service-categories/deleted/': typeof NonAuthLayoutServiceCategoriesDeletedIndexLazyRoute;
   '/_non-auth-layout/users/deleted/': typeof NonAuthLayoutUsersDeletedIndexLazyRoute;
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: '' | '/' | '/login' | '/users' | '/users/deleted';
+  fullPaths:
+    | ''
+    | '/'
+    | '/login'
+    | '/service-categories'
+    | '/users'
+    | '/service-categories/deleted'
+    | '/users/deleted';
   fileRoutesByTo: FileRoutesByTo;
-  to: '/' | '/login' | '/users' | '/users/deleted';
+  to:
+    | '/'
+    | '/login'
+    | '/service-categories'
+    | '/users'
+    | '/service-categories/deleted'
+    | '/users/deleted';
   id:
     | '__root__'
     | '/_non-auth-layout'
     | '/_non-auth-layout/'
     | '/login/'
+    | '/_non-auth-layout/service-categories/'
     | '/_non-auth-layout/users/'
+    | '/_non-auth-layout/service-categories/deleted/'
     | '/_non-auth-layout/users/deleted/';
   fileRoutesById: FileRoutesById;
 }
@@ -180,7 +244,9 @@ export const routeTree = rootRoute
       "filePath": "_non-auth-layout.tsx",
       "children": [
         "/_non-auth-layout/",
+        "/_non-auth-layout/service-categories/",
         "/_non-auth-layout/users/",
+        "/_non-auth-layout/service-categories/deleted/",
         "/_non-auth-layout/users/deleted/"
       ]
     },
@@ -191,8 +257,16 @@ export const routeTree = rootRoute
     "/login/": {
       "filePath": "login/index.lazy.tsx"
     },
+    "/_non-auth-layout/service-categories/": {
+      "filePath": "_non-auth-layout/service-categories/index.lazy.tsx",
+      "parent": "/_non-auth-layout"
+    },
     "/_non-auth-layout/users/": {
       "filePath": "_non-auth-layout/users/index.lazy.tsx",
+      "parent": "/_non-auth-layout"
+    },
+    "/_non-auth-layout/service-categories/deleted/": {
+      "filePath": "_non-auth-layout/service-categories/deleted/index.lazy.tsx",
       "parent": "/_non-auth-layout"
     },
     "/_non-auth-layout/users/deleted/": {
