@@ -51,6 +51,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -282,9 +283,11 @@ function UsageUpdateDialog({ usageTracking, onOpenChange, ...props }: UsageUpdat
       user: !usageTracking ? '' : usageTracking.user?.id,
       computer: !usageTracking ? '' : usageTracking.computer?.id,
       startTimeStamp: !usageTracking ? '' : usageTracking.startTimeStamp,
-      endTimestamp: !usageTracking ? '' : usageTracking.endTimestamp,
+      endTimeStamp: !usageTracking ? '' : usageTracking.endTimeStamp,
     },
   });
+
+  console.log(usageTracking);
 
   const { data: users } = useQuery({
     queryKey: ['users', 'all'],
@@ -372,6 +375,32 @@ function UsageUpdateDialog({ usageTracking, onOpenChange, ...props }: UsageUpdat
                 </FormItem>
               )}
             />
+            {/*  */}
+            <FormField
+              name="startTimeStamp"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel required>Start time stamp</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {/*  */}
+            <FormField
+              name="endTimeStamp"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel required>End time stamp</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter className="col-span-2">
               <Button type="submit">Save</Button>
             </DialogFooter>
@@ -389,7 +418,7 @@ function UserCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dial
       user: '',
       computer: '',
       startTimeStamp: '',
-      endTimestamp: '',
+      endTimeStamp: '',
     },
   });
 
@@ -476,6 +505,32 @@ function UserCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dial
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {/*  */}
+            <FormField
+              name="startTimestamp"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel required>Start time stamp</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {/*  */}
+            <FormField
+              name="endTimestamp"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel required>End time stamp</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

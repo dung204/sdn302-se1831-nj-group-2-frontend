@@ -6,7 +6,7 @@ export type UsageTracking = {
   user: User;
   computer: Computer;
   startTimeStamp: string;
-  endTimestamp: string;
+  endTimeStamp: string;
   createTimestamp: string;
   deleteTimestamp?: string;
 };
