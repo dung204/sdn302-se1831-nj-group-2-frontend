@@ -1,5 +1,5 @@
 import type { SuccessResponse } from '@/common/types';
-import type { ChangePasswordSchema, LoginSchema } from '@/common/types/api/auth';
+import type { LoginSchema } from '@/common/types/api/auth';
 import type { LoginSuccessPayload } from '@/common/types/api/auth/login-success-payload.type';
 import { HttpClient } from '@/lib/http/core.http';
 
@@ -18,12 +18,6 @@ class AuthHttpClient extends HttpClient {
 
   public logout() {
     return this.delete<void>('/auth/logout', { isPrivateRoute: true });
-  }
-
-  public changePassword(payload: ChangePasswordSchema) {
-    return this.patch<void>('/auth/change-password', payload, {
-      isPrivateRoute: true,
-    });
   }
 }
 

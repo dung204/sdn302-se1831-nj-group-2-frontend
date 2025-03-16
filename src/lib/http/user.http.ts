@@ -1,10 +1,29 @@
 import type { CommonSearchParams, SuccessResponse } from '@/common/types';
+import type { ChangePasswordSchema } from '@/common/types/api/auth';
 import type { CreateUserSchema, UpdateUserSchema, User } from '@/common/types/api/user';
 import { HttpClient } from '@/lib/http/core.http';
 
 class UserHttpClient extends HttpClient {
   constructor() {
     super();
+  }
+
+  public getCurrentUserProfile() {
+    return this.get<SuccessResponse<User>>('/me/profile', {
+      isPrivateRoute: true,
+    });
+  }
+
+  public updateCurrentUserProfile(payload: UpdateUserSchema) {
+    return this.patch<SuccessResponse<User>>('/me/profile', payload, {
+      isPrivateRoute: true,
+    });
+  }
+
+  public changePassword(payload: ChangePasswordSchema) {
+    return this.patch<void>('/auth/change-password', payload, {
+      isPrivateRoute: true,
+    });
   }
 
   public getAllUsers(params?: CommonSearchParams) {
