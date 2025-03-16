@@ -5,7 +5,7 @@ import type { UsageTracking } from '@/common/types/api/usage-tracking';
 import type { Computer } from '@/common/types/api/usage-tracking/computer.type';
 import type { User } from '@/common/types/api/user';
 
-import { DataTable, DataTableHeader } from './data-table';
+import { DataTable, DataTableHeader, type FilterRule } from './data-table';
 
 interface UsageTrackingDataTableProps
   extends Omit<ComponentProps<typeof DataTable<UsageTracking>>, 'columns' | 'getRowId'> {
@@ -13,6 +13,14 @@ interface UsageTrackingDataTableProps
     existingColumns: typeof usageTrackingDataTableColumns,
   ) => ColumnDef<UsageTracking>[];
 }
+
+const filterRules: FilterRule<UsageTracking>[] = [
+  { field: 'user', type: 'text' },
+  { field: 'computer', type: 'text' },
+  { field: 'startTimeStamp', type: 'datetime' },
+  { field: 'endTimeStamp', type: 'datetime' },
+  { field: 'createTimestamp', type: 'datetime' },
+];
 
 const usageTrackingDataTableColumns = [
   {
@@ -76,13 +84,19 @@ const usageTrackingDataTableColumns = [
   },
 ] as const satisfies ColumnDef<UsageTracking>[];
 
-export function UsageTrackingDataTable({ renderColumns, ...props }: UsageTrackingDataTableProps) {
+export function UsageTrackingDataTable({
+  renderColumns,
+  filter,
+  ...props
+}: UsageTrackingDataTableProps) {
   return (
     <DataTable
       getRowId={(row) => row.id}
       columns={
         renderColumns ? renderColumns(usageTrackingDataTableColumns) : usageTrackingDataTableColumns
       }
+      filterRules={filterRules}
+      filter={filter}
       {...props}
     />
   );

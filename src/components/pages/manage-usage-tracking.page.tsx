@@ -97,7 +97,7 @@ export function ManageUsageTrackingPage() {
             </Button>
           )}
           <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="size-4" /> Add new user
+            <Plus className="size-4" /> Add new usage tracking
           </Button>
         </div>
 
@@ -204,7 +204,7 @@ export function ManageUsageTrackingPage() {
         open={isUpdateDialogOpen}
         onOpenChange={setIsUpdateDialogOpen}
       />
-      <UserCreateDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
+      <UsageCreateDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
     </>
   );
 }
@@ -286,8 +286,6 @@ function UsageUpdateDialog({ usageTracking, onOpenChange, ...props }: UsageUpdat
       endTimeStamp: !usageTracking ? '' : usageTracking.endTimeStamp,
     },
   });
-
-  console.log(usageTracking);
 
   const { data: users } = useQuery({
     queryKey: ['users', 'all'],
@@ -411,7 +409,7 @@ function UsageUpdateDialog({ usageTracking, onOpenChange, ...props }: UsageUpdat
   );
 }
 
-function UserCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dialog>) {
+function UsageCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dialog>) {
   const form = useForm<CreateUsageTrackingSchema>({
     resolver: zodResolver(createUsageTrackingSchema),
     values: {
