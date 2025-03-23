@@ -2,5 +2,8 @@ export * from './pagination.type';
 export * from './sorting.type';
 export * from './filter.type';
 export * from './success-response.type';
+export * from './failed-response.type';
 export * from './common-search-params.type';
 export * from './local-storage-key.type';
+export * from './base-model.type';
+export * from './device-status.type';

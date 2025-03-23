@@ -2,8 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, getRouteApi, useNavigate } from '@tanstack/react-router';
 import { type RowSelectionState } from '@tanstack/react-table';
-import { Edit, Ellipsis, Plus, Trash2 } from 'lucide-react';
-import { type ComponentProps, useEffect, useState } from 'react';
+import { Edit, Ellipsis, EyeIcon, Plus, Trash2 } from 'lucide-react';
+import { type ComponentProps, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -59,7 +59,7 @@ const route = getRouteApi('/_non-auth-layout/service-categories/');
 export function ManageServiceCategoriesPage() {
   const searchParams = serviceCategoriesSearchParamsSchema.parse(route.useSearch());
   const { user } = useAuth();
-
+  const navigate = useNavigate();
   const { data: res, isLoading } = useQuery({
     queryKey: ['serviceCategories', 'all', searchParams],
     queryFn: async () => serviceCategoriesHttpClient.getAllServiceCategories(searchParams),
@@ -71,20 +71,12 @@ export function ManageServiceCategoriesPage() {
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  useEffect(() => {
-    if (user?.role === Role.OWNER) {
-      document.title = 'Existing Service Categories | Internet Cafe Management';
-    }
-  }, [user]);
-
   if (!user) {
     return <Navigate to="/login" />;
   }
-
-  if (user.role !== Role.OWNER) {
+  if (![Role.OWNER, Role.BRANCH_ADMIN].includes(user.role)) {
     return <Navigate to="/" />;
   }
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-end gap-4">
@@ -95,6 +87,9 @@ export function ManageServiceCategoriesPage() {
         )}
         <Button onClick={() => setIsCreateDialogOpen(true)}>
           <Plus className="size-4" /> Add new category
+        </Button>
+        <Button variant="outline" onClick={() => navigate({ to: '/service-categories/deleted' })}>
+          <EyeIcon className="size-4" /> View deleted computers
         </Button>
       </div>
       <ServiceCategoriesDataTable

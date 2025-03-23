@@ -2,8 +2,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { ComponentProps } from 'react';
 
 import type { ServiceCategories } from '@/common/types/api/service-categories';
-
-import { DataTable, DataTableHeader } from './data-table';
+import { DataTable, DataTableHeader, type FilterRule } from '@/components/ui/data-table';
 
 const serviceCategoriesDataTableColumns = [
   {
@@ -33,11 +32,11 @@ const serviceCategoriesDataTableColumns = [
   },
   // Add more columns as needed...
 ] as const satisfies ColumnDef<ServiceCategories>[];
-// const filterRules: FilterRule<ServiceCategories>[] = [
-//   { field: 'name', type: 'text' },
-//   { field: 'fromCreateTimestamp', type: 'datetime' },
-//   { field: 'toCreateTimestamp', type: 'datetime' },
-// ];
+const filterRules: FilterRule<ServiceCategories>[] = [
+  { field: 'name', type: 'text' },
+  { field: 'fromCreateTimestamp', type: 'datetime' },
+  { field: 'toCreateTimestamp', type: 'datetime' },
+];
 interface ServiceCategoriesDataTableProps
   extends Omit<ComponentProps<typeof DataTable<ServiceCategories>>, 'columns' | 'getRowId'> {
   renderColumns?: (
@@ -57,7 +56,7 @@ export function ServiceCategoriesDataTable({
           ? serviceCategoriesDataTableColumns
           : renderColumns(serviceCategoriesDataTableColumns)
       }
-      // filterRules={filterRules}
+      filterRules={filterRules}
       filter={filter}
       {...props}
     />

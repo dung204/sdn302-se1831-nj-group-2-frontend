@@ -11,7 +11,7 @@ import { jwtDecode } from 'jwt-decode';
 import { toast } from 'sonner';
 
 import { localStorageService } from '@/common/services';
-import { LocalStorageKey } from '@/common/types';
+import { type FailedResponse, LocalStorageKey } from '@/common/types';
 import { envVariables } from '@/common/utils';
 
 interface CustomAxiosRequestConfig extends AxiosRequestConfig {
@@ -92,6 +92,11 @@ export class HttpClient {
         localStorageService.remove(LocalStorageKey.REFRESH_TOKEN);
         window.location.replace('/login');
       }
+    }
+
+    const failedResponse = error.response?.data as FailedResponse;
+    if (failedResponse?.messages) {
+      failedResponse.messages.forEach((message) => toast.error(message));
     }
 
     return Promise.reject(error);

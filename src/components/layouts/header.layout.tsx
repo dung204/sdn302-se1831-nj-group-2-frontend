@@ -48,7 +48,7 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { ThemeToggler } from '@/components/ui/theme-toggler';
-import { authHttpClient } from '@/lib/http';
+import { authHttpClient, userHttpClient } from '@/lib/http';
 
 export function HeaderLayout() {
   const location = useLocation();
@@ -166,7 +166,7 @@ function ChangePasswordDialog({ onOpenChange, ...props }: ComponentProps<typeof 
   });
 
   const { mutateAsync: triggerChangePassword, isPending } = useMutation({
-    mutationFn: (payload: ChangePasswordSchema) => authHttpClient.changePassword(payload),
+    mutationFn: (payload: ChangePasswordSchema) => userHttpClient.changePassword(payload),
     onSuccess: () => {
       toast.success('Password changed successfully');
       handleOpenChange(false);

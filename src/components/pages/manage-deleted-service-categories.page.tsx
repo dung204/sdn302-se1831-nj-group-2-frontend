@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Navigate, getRouteApi, useNavigate } from '@tanstack/react-router';
+import { getRouteApi, useNavigate } from '@tanstack/react-router';
 import type { RowSelectionState } from '@tanstack/react-table';
 import { Undo2 } from 'lucide-react';
 import { type ComponentProps, useEffect, useState } from 'react';
@@ -45,15 +45,6 @@ export function ManageDeletedServiceCategoriesPage() {
       document.title = 'Deleted Service Categories | Internet Cafe Management';
     }
   }, [user]);
-
-  if (!user) {
-    return <Navigate to="/login" />;
-  }
-
-  if (user.role !== Role.OWNER) {
-    return <Navigate to="/" />;
-  }
-
   return (
     <div className="flex flex-col gap-4">
       {Object.keys(selectedCategories).length > 0 && (
