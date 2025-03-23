@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, getRouteApi, useNavigate } from '@tanstack/react-router';
 import type { RowSelectionState } from '@tanstack/react-table';
 import { Undo2 } from 'lucide-react';
-import { type ComponentProps, useEffect, useState } from 'react';
+import { type ComponentProps, useState } from 'react';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/common/hooks';
@@ -26,33 +26,23 @@ import { ComputerDataTable, DataTableHeader } from '@/components/ui/data-table';
 import { computerHttpClient } from '@/lib/http/computer.http';
 
 const route = getRouteApi('/_non-auth-layout/computers/deleted/');
-
 export function ManageDeletedComputersPage() {
   const { user } = useAuth();
+  const [selectedComputers, setSelectedComputers] = useState<RowSelectionState>({});
+  const [isRestoreDialogOpen, setIsRestoreDialogOpen] = useState(false);
   const searchParams = computerSearchParamsSchema.parse(route.useSearch());
-
   const { data: res, isLoading } = useQuery({
     queryKey: ['deleted-computers', 'all', searchParams],
     queryFn: () => computerHttpClient.getAllDeletedComputers(searchParams),
   });
 
-  const [selectedComputers, setSelectedComputers] = useState<RowSelectionState>({});
-  const [isRestoreDialogOpen, setIsRestoreDialogOpen] = useState(false);
-
-  useEffect(() => {
-    if (user?.role === Role.OWNER) {
-      document.title = 'Deleted computers | Internet Cafe Management';
-    }
-  }, [user]);
-
   if (!user) {
     return <Navigate to="/login" />;
   }
 
-  if (user!.role !== Role.OWNER) {
+  if (![Role.BRANCH_ADMIN, Role.STAFF].includes(user.role)) {
     return <Navigate to="/" />;
   }
-
   return (
     <div className="flex flex-col gap-4">
       {Object.keys(selectedComputers).length === 0 || (

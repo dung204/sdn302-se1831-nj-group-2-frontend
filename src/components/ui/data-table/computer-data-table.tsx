@@ -5,7 +5,7 @@ import type { Computer } from '@/common/types/api/computer';
 
 import { DataTable, DataTableHeader } from './data-table';
 
-const computerDataTableColumns = [
+const computerDataTableColumns: ColumnDef<Computer>[] = [
   {
     accessorKey: 'id',
     header: ({ column }) => <DataTableHeader column={column} title="ID" />,
@@ -15,7 +15,7 @@ const computerDataTableColumns = [
     header: ({ column }) => <DataTableHeader column={column} title="Name" />,
   },
   {
-    accessorKey: 'position.name', // Hiển thị tên vị trí
+    accessorKey: 'position.name',
     header: ({ column }) => <DataTableHeader column={column} title="Position" />,
   },
   {
@@ -23,7 +23,7 @@ const computerDataTableColumns = [
     header: ({ column }) => <DataTableHeader column={column} title="Status" />,
     cell: ({ row }) => {
       const status = row.getValue<string>('status');
-      return <span>{status}</span>; // Hiển thị trạng thái
+      return <span>{status}</span>;
     },
   },
   {
@@ -31,7 +31,7 @@ const computerDataTableColumns = [
     header: ({ column }) => <DataTableHeader column={column} title="Price/Hour" />,
     cell: ({ row }) => {
       const price = row.getValue<number>('pricePerHour');
-      return <span>${price.toFixed(2)}</span>; // Hiển thị giá/giờ với định dạng USD
+      return <span>${price.toFixed(2)}</span>;
     },
   },
   {
@@ -47,21 +47,32 @@ const computerDataTableColumns = [
     header: ({ column }) => <DataTableHeader column={column} title="Storage" />,
   },
   {
-    accessorKey: 'provider.name', // Hiển thị tên nhà cung cấp
+    accessorKey: 'provider.name',
     header: ({ column }) => <DataTableHeader column={column} title="Provider" />,
   },
   {
     accessorKey: 'peripherals',
     header: ({ column }) => <DataTableHeader column={column} title="Peripherals" />,
     cell: ({ row }) => {
-      const peripherals = row.getValue<Array<{ id: string; status: string }>>('peripherals');
-      if (!peripherals || peripherals.length === 0) {
+      const rowPeripherals = row.getValue<
+        Array<{
+          id: string;
+          status: string;
+          name: string;
+        }>
+      >('peripherals');
+
+      if (!rowPeripherals || rowPeripherals.length === 0) {
         return <span>No peripherals</span>;
       }
 
-      // Hiển thị trạng thái của từng peripheral dưới dạng danh sách
-      const peripheralStatuses = peripherals.map((p) => p.status).join(', ');
-      return <span>{peripheralStatuses}</span>;
+      const peripheralNames = rowPeripherals.map((p) => p.name || 'Unknown').join(', ');
+      const peripheralstatus = rowPeripherals.map((p) => p.status || 'Unknown').join(', ');
+      return (
+        <span>
+          {peripheralNames}-{peripheralstatus}
+        </span>
+      );
     },
   },
   {
@@ -70,12 +81,12 @@ const computerDataTableColumns = [
     cell: ({ row }) => {
       const timestamp = row.getValue<string>('createTimestamp');
       if (!timestamp) {
-        return <span>N/A</span>; // If no timestamp is present
+        return <span>N/A</span>;
       }
 
       const date = new Date(timestamp);
       if (isNaN(date.getTime())) {
-        return <span>Invalid date</span>; // If the timestamp cannot be converted to a valid date
+        return <span>Invalid date</span>;
       }
 
       const formattedDate = new Intl.DateTimeFormat('en-US', {
@@ -83,24 +94,10 @@ const computerDataTableColumns = [
         timeStyle: 'long',
       }).format(date);
 
-      return <span>{formattedDate}</span>; // Display the formatted date
+      return <span>{formattedDate}</span>;
     },
   },
-] as const satisfies ColumnDef<Computer>[];
-
-// const filterRules: FilterRule<Computer>[] = [
-//   { field: 'firstName', type: 'text' },
-//   { field: 'lastName', type: 'text' },
-//   // {
-//   //   field: 'role',
-//   //   type: 'select',
-//   //   options: Object.values(Role).map((role) => ({ value: role, label: role })),
-//   //   multiple: true,
-//   // },
-//   { field: 'createTimestamp', type: 'datetime' },
-//   { field: 'fromPricePerHour', type: 'text' },
-//   { field: 'toPricePerHour', type: 'datetime' },
-// ];
+];
 
 interface ComputerDataTableProps
   extends Omit<ComponentProps<typeof DataTable<Computer>>, 'columns' | 'getRowId'> {
@@ -112,7 +109,6 @@ export function ComputerDataTable({ renderColumns, filter, ...props }: ComputerD
     <DataTable
       getRowId={(row) => row.id}
       columns={!renderColumns ? computerDataTableColumns : renderColumns(computerDataTableColumns)}
-      //   filterRules={filterRules}
       filter={filter}
       {...props}
     />

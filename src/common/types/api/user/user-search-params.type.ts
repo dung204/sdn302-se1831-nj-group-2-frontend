@@ -12,12 +12,7 @@ export const userSearchParamsSchema = commonSearchParamsSchema.extend({
   phoneNumber: z.string().optional(),
   address: z.string().optional(),
   role: z
-    .union([
-      z
-        .enum([Role.OWNER, Role.BRANCH_ADMIN, Role.STAFF, Role.GUEST])
-        .transform((value) => value.split(',')),
-      z.array(z.enum([Role.OWNER, Role.BRANCH_ADMIN, Role.STAFF, Role.GUEST])),
-    ])
+    .union([z.nativeEnum(Role).transform((value) => value.split(',')), z.array(z.nativeEnum(Role))])
     .optional(),
   branch: z.string().optional(),
 });

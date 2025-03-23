@@ -25,7 +25,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { CurrencyRangeInput } from '@/components/ui/currency-range-input';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
+import { DateTimeRangePicker } from '@/components/ui/date-time-range-picker';
 import {
   Dialog,
   DialogContent,
@@ -63,7 +64,8 @@ import { cn } from '@/lib/cn';
 type FilterRuleSelectOption = { label: string; value: string };
 
 export type FilterRule<TData> = { field: keyof TData } & (
-  | { type: 'text' | 'datetime' }
+  | { type: 'text' }
+  | { type: 'datetime'; range?: boolean }
   | { type: 'number'; range?: boolean; currency?: boolean }
   | { type: 'select'; options: FilterRuleSelectOption[]; multiple?: boolean }
 );
@@ -369,14 +371,38 @@ function FilterDialog<TData>({
                 );
                 break;
               case 'datetime' /**
-               * In the case of a date range picker, filerState stores two fields: `from${field}` and `to${field}`
+               * In the case of a datetime range picker, filerState stores two fields: `from${field}` and `to${field}`
                * For example, if the field is `createdAt`, the filterState would look like:
                * { fromCreatedAt: '2021-01-01', toCreatedAt: '2021-01-31' }
                */: {
+                if (!rule.range) {
+                  FilterComp = (
+                    <DateTimePicker
+                      date={
+                        !filterState[field] ? undefined : new Date(filterState[field] as string)
+                      }
+                      setDate={(date) => {
+                        if (!date) {
+                          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                          const { [field]: _, ...rest } = filterState;
+                          setFilterState(rest);
+                          return;
+                        }
+
+                        setFilterState((state) => ({
+                          ...state,
+                          [rule.field as string]: date.toISOString(),
+                        }));
+                      }}
+                    />
+                  );
+                  break;
+                }
+
                 const fromField = `from${field[0].toUpperCase()}${field.slice(1)}`;
                 const toField = `to${field[0].toUpperCase()}${field.slice(1)}`;
                 FilterComp = (
-                  <DateRangePicker
+                  <DateTimeRangePicker
                     dateRange={{
                       from: !filterState[fromField]
                         ? undefined

@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { Navigate, getRouteApi } from '@tanstack/react-router';
 import type { RowSelectionState } from '@tanstack/react-table';
-import { Edit, Ellipsis, Plus, Trash2 } from 'lucide-react';
-import { type ComponentProps, useEffect, useState } from 'react';
+import { Edit, Ellipsis, EyeIcon, Plus, Trash2 } from 'lucide-react';
+import { type ComponentProps, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -19,6 +20,8 @@ import {
   createComputerSchema,
   updateComputerSchema,
 } from '@/common/types/api/computer';
+import type { Peripheral } from '@/common/types/api/peripheral';
+import { Role } from '@/common/types/api/user';
 import { computerSearchParamsSchema } from '@/common/types/api/user/computer-search-param.type';
 import {
   AlertDialog,
@@ -61,12 +64,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { positionHttpClient, providerHttpClient } from '@/lib/http';
+import { peripheralHttpClient, positionHttpClient, providerHttpClient } from '@/lib/http';
 import { computerHttpClient } from '@/lib/http/computer.http';
 
 const route = getRouteApi('/_non-auth-layout/computers/');
 
 export function ManageComputersPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const searchParams = computerSearchParamsSchema.parse(route.useSearch());
 
@@ -75,6 +79,13 @@ export function ManageComputersPage() {
     queryFn: () => computerHttpClient.getAllComputers(searchParams),
   });
 
+  const { data: peripheralsResponse, isLoading: isLoadingPeripherals } = useQuery<
+    SuccessResponse<Peripheral[]>
+  >({
+    queryKey: ['peripherals', 'all'],
+    queryFn: () => peripheralHttpClient.getAllPeripheral(),
+  });
+  const peripherals = peripheralsResponse?.data || [];
   // Lấy danh sách providers từ API
   const { data: providersResponse, isLoading: isLoadingProviders } = useQuery<
     SuccessResponse<Provider[]>
@@ -83,36 +94,36 @@ export function ManageComputersPage() {
     queryFn: () => providerHttpClient.getAllProviders(),
   });
   const providers = providersResponse?.data || [];
-
   // Lấy danh sách positions từ API
   const { data: positionsResponse, isLoading: isLoadingPositions } = useQuery<
     SuccessResponse<Position[]>
   >({
     queryKey: ['positions', 'all'],
-    queryFn: () => positionHttpClient.getAllPositions(),
+    queryFn: async () => {
+      const response = await positionHttpClient.getAllPositions();
+      return {
+        data: response.data.map((position) => ({
+          ...position,
+          branch: String(position.branch), // Ensure branch is a string
+        })),
+        meta: response.meta,
+      };
+    },
   });
   const positions = positionsResponse?.data || [];
 
-  // console.log('providersResponse?.data', providersResponse?.data);
-  // console.log('positionsResponse?.data', positionsResponse?.data);
-
+  console.log('providersResponse?.data', providersResponse?.data);
+  console.log('positionsResponse?.data', positionsResponse?.data);
   const [computersToDelete, setComputersToDelete] = useState<RowSelectionState>({});
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [computerToUpdate, setComputerToUpdate] = useState<Computer | null>(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  useEffect(() => {
-    if (user?.role === 'OWNER') {
-      document.title = 'Existing computers | Internet Cafe Management';
-    }
-  }, [user]);
-
   if (!user) {
     return <Navigate to="/login" />;
   }
-
-  if (user.role !== 'OWNER') {
+  if (![Role.BRANCH_ADMIN, Role.STAFF].includes(user.role)) {
     return <Navigate to="/" />;
   }
 
@@ -126,6 +137,9 @@ export function ManageComputersPage() {
         )}
         <Button onClick={() => setIsCreateDialogOpen(true)}>
           <Plus className="size-4" /> Add new computer
+        </Button>
+        <Button variant="outline" onClick={() => navigate({ to: '/computers/deleted' })}>
+          <EyeIcon className="size-4" /> View deleted computers
         </Button>
       </div>
       <ComputerDataTable
@@ -215,8 +229,10 @@ export function ManageComputersPage() {
         onOpenChange={setIsUpdateDialogOpen}
         providers={providers}
         positions={positions}
+        peripherals={peripherals}
         isLoadingProviders={isLoadingProviders}
         isLoadingPositions={isLoadingPositions}
+        isLoadingPeripherals={isLoadingPeripherals}
       />
       <ComputerCreateDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
     </div>
@@ -278,8 +294,10 @@ interface ComputerUpdateDialogProps extends ComponentProps<typeof Dialog> {
   computer: Computer | null;
   providers: Provider[];
   positions: Position[];
+  peripherals: Peripheral[];
   isLoadingProviders: boolean;
   isLoadingPositions: boolean;
+  isLoadingPeripherals: boolean;
 }
 
 function ComputerUpdateDialog({
@@ -287,8 +305,10 @@ function ComputerUpdateDialog({
   onOpenChange,
   providers,
   positions,
+  peripherals,
   isLoadingProviders,
   isLoadingPositions,
+  isLoadingPeripherals,
   ...props
 }: ComputerUpdateDialogProps) {
   const form = useForm<UpdateComputerSchema>({
@@ -302,10 +322,11 @@ function ComputerUpdateDialog({
       ram: !computer ? '' : computer.ram,
       storage: !computer ? '' : computer.storage,
       provider: !computer ? '' : computer.provider.id, // Use providerId instead of the whole object
-      peripherals: !computer ? [] : computer.peripherals,
+      peripherals: !computer ? [] : computer.peripherals.map((peripheral) => peripheral.id),
     },
   });
 
+  console.log(form, 'values');
   const queryClient = useQueryClient();
   const { mutateAsync: triggerUpdateComputer } = useMutation({
     mutationFn: computerHttpClient.updateComputer(computer?.id ?? ''),
@@ -344,6 +365,32 @@ function ComputerUpdateDialog({
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="peripherals.id" // Match the schema field name (lowercase)
+              render={() => (
+                <FormItem className="col-span-1">
+                  <FormLabel required>Peripherals</FormLabel>{' '}
+                  {/* Corrected label to "Peripherals" */}
+                  <Select>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={isLoadingPeripherals ? 'Loading...' : 'Select a peripheral'}
+                        />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {peripherals.map((peripheral) => (
+                        <SelectItem key={peripheral.id} value={peripheral.id}>
+                          {peripheral.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -508,12 +555,29 @@ function ComputerCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof 
     queryFn: () => providerHttpClient.getAllProviders(),
   });
 
+  const { data: peripheralsResponse, isLoading: isLoadingPeripherals } = useQuery<
+    SuccessResponse<Peripheral[]>
+  >({
+    queryKey: ['peripherals', 'all'],
+    queryFn: () => peripheralHttpClient.getAllPeripheral(),
+  });
+
+  console.log(peripheralsResponse, 'peripheralsResponse');
   // Lấy danh sách positions từ API
   const { data: positionsResponse, isLoading: isLoadingPositions } = useQuery<
     SuccessResponse<Position[]>
   >({
     queryKey: ['positions', 'all'],
-    queryFn: () => positionHttpClient.getAllPositions(),
+    queryFn: async () => {
+      const response = await positionHttpClient.getAllPositions();
+      return {
+        ...response,
+        data: response.data.map((position) => ({
+          ...position,
+          branch: String(position.branch), // Ensure branch is a string
+        })),
+      };
+    },
   });
 
   // console.log("providersResponse?.data", providersResponse?.data)
@@ -581,6 +645,45 @@ function ComputerCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof 
                 </FormItem>
               )}
             />
+
+            <FormField
+              name="peripherals.id"
+              render={({ field }) => (
+                <FormItem className="col-span-1">
+                  <FormLabel required>Peripheral</FormLabel>
+                  <Select
+                    onValueChange={(value) => {
+                      form.setValue('peripherals', [value]); // Wrap value in an array
+                    }}
+                    value={field.value}
+                    disabled={isLoadingPositions}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={isLoadingPeripherals ? 'Loading...' : 'Select a peripherals'}
+                        />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {peripheralsResponse?.data && peripheralsResponse.data.length > 0 ? (
+                        peripheralsResponse?.data.map((peripheral) => (
+                          <SelectItem key={peripheral.id} value={peripheral.id}>
+                            {peripheral.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem disabled value="">
+                          No peripheral available
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               name="position.id"
               render={({ field }) => (

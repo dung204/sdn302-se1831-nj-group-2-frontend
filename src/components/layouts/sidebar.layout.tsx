@@ -1,14 +1,18 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import {
   ChevronRight,
+  Computer,
   Gauge,
-  Monitor,
-  MonitorUp,
-  MonitorX,
+  LandPlot,
+  LayoutGrid,
+  MapPin,
+  MonitorSpeaker,
+  Receipt,
   Router,
-  User,
-  UserX,
+  Truck,
+  Users,
   UsersRound,
+  Utensils,
 } from 'lucide-react';
 import { type ComponentProps, type ReactNode } from 'react';
 
@@ -51,36 +55,44 @@ export const navItems: Record<Role, NavItem[]> = {
       url: '/',
     },
     {
-      title: 'Users',
-      icon: <User className="size-4" />,
+      title: 'Branches',
+      icon: <MapPin className="size-4" />,
+      url: '/branches',
+    },
+    {
+      title: 'Peripherals',
+      icon: <MonitorSpeaker className="size-4" />,
+      url: '/peripherals',
+    },
+    {
+      title: 'Providers',
+      icon: <Truck className="size-4" />,
+      url: '/providers',
+    },
+    {
+      title: 'Services',
+      icon: <Utensils className="size-4" />,
       urls: [
         {
-          title: 'Existing users',
-          icon: <UsersRound className="size-4" />,
-          url: '/users',
+          title: 'Services',
+          icon: <Utensils className="size-4" />,
+          url: '/services',
         },
         {
-          title: 'Deleted users',
-          icon: <UserX className="size-4" />,
-          url: '/users/deleted',
+          title: 'Service Categories',
+          icon: <LayoutGrid className="size-4" />,
+          url: '/service-categories',
         },
       ],
     },
     {
-      title: 'Computers',
-      icon: <Monitor className="size-4" />,
-      urls: [
-        {
-          title: 'Existing computers',
-          icon: <MonitorUp className="size-4" />,
-          url: '/computers',
-        },
-        {
-          title: 'Deleted computers',
-          icon: <MonitorX className="size-4" />,
-          url: '/computers/deleted',
-        },
-      ],
+      title: 'Bills',
+      icon: <Receipt className="size-4" />,
+      url: '/bills',
+    },
+    {
+      title: 'Usage Tracking',
+      url: '/usage-tracking',
     },
   ],
   [Role.BRANCH_ADMIN]: [
@@ -90,20 +102,54 @@ export const navItems: Record<Role, NavItem[]> = {
       url: '/',
     },
     {
+      title: 'Guests',
+      icon: <UsersRound className="size-4" />,
+      url: '/guests',
+    },
+    {
+      title: 'Staffs',
+      icon: <Users className="size-4" />,
+      url: '/staffs',
+    },
+    {
+      title: 'Positions',
+      icon: <LandPlot />,
+      url: '/positions',
+    },
+    {
       title: 'Computers',
-      icon: <Monitor className="size-4" />,
+      icon: <Computer className="size-4" />,
+      url: '/computers',
+    },
+    {
+      title: 'Peripherals',
+      icon: <MonitorSpeaker className="size-4" />,
+      url: '/peripherals',
+    },
+    {
+      title: 'Services',
+      icon: <Utensils className="size-4" />,
       urls: [
         {
-          title: 'Existing computers',
-          icon: <MonitorUp className="size-4" />,
-          url: '/computers',
+          title: 'Services',
+          icon: <Utensils className="size-4" />,
+          url: '/services',
         },
         {
-          title: 'Deleted computers',
-          icon: <MonitorX className="size-4" />,
-          url: '/computers/deleted',
+          title: 'Service Categories',
+          icon: <LayoutGrid className="size-4" />,
+          url: '/service-categories',
         },
       ],
+    },
+    {
+      title: 'Usage Tracking',
+      url: '/usage-tracking',
+    },
+    {
+      title: 'Bills',
+      icon: <Receipt className="size-4" />,
+      url: '/bills',
     },
   ],
   [Role.STAFF]: [
@@ -112,12 +158,42 @@ export const navItems: Record<Role, NavItem[]> = {
       icon: <Gauge className="size-4" />,
       url: '/',
     },
+    {
+      title: 'Guests',
+      icon: <UsersRound className="size-4" />,
+      url: '/guests',
+    },
+    {
+      title: 'Services',
+      icon: <Utensils className="size-4" />,
+      url: '/services',
+    },
+    {
+      title: 'Bills',
+      icon: <Receipt className="size-4" />,
+      url: '/bills',
+    },
   ],
   [Role.GUEST]: [
     {
       title: 'Dashboard',
       icon: <Gauge className="size-4" />,
       url: '/',
+    },
+    {
+      title: 'Services',
+      icon: <Utensils className="size-4" />,
+      url: '/services',
+    },
+    {
+      title: 'Computers',
+      icon: <Computer className="size-4" />,
+      url: '/computers',
+    },
+    {
+      title: 'My bills',
+      icon: <Receipt className="size-4" />,
+      url: '/bills',
     },
   ],
 };
@@ -183,15 +259,17 @@ function renderNavItem(item: NavItem, currentPathname: string) {
           <SidebarGroupContent>
             <SidebarMenuSub>
               {item.urls.map((item) => (
-                <SidebarMenuSubItem key={item.title}>
+                <SidebarMenuSubItem key={item.title} title={item.title}>
                   <SidebarMenuSubButton
                     className="transition-all"
                     asChild
                     isActive={currentPathname === item.url}
                   >
                     <Link to={item.url}>
-                      {item.icon}
-                      {item.title}
+                      <span className="flex items-center gap-2">
+                        {item.icon}
+                        {item.title}
+                      </span>
                     </Link>
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>

@@ -1,0 +1,9 @@
+export enum PeripheralType {
+  KEYBOARD = 'KEYBOARD',
+  MOUSE = 'MOUSE',
+  MONITOR = 'MONITOR',
+  HEADPHONE = 'HEADPHONE',
+  SPEAKER = 'SPEAKER',
+  WEBCAM = 'WEBCAM',
+  OTHER = 'OTHER',
+}
