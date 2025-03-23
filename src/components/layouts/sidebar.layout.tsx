@@ -89,6 +89,22 @@ export const navItems: Record<Role, NavItem[]> = {
       icon: <Gauge className="size-4" />,
       url: '/',
     },
+    {
+      title: 'Computers',
+      icon: <Monitor className="size-4" />,
+      urls: [
+        {
+          title: 'Existing computers',
+          icon: <MonitorUp className="size-4" />,
+          url: '/computers',
+        },
+        {
+          title: 'Deleted computers',
+          icon: <MonitorX className="size-4" />,
+          url: '/computers/deleted',
+        },
+      ],
+    },
   ],
   [Role.STAFF]: [
     {

@@ -88,6 +88,20 @@ const computerDataTableColumns = [
   },
 ] as const satisfies ColumnDef<Computer>[];
 
+// const filterRules: FilterRule<Computer>[] = [
+//   { field: 'firstName', type: 'text' },
+//   { field: 'lastName', type: 'text' },
+//   // {
+//   //   field: 'role',
+//   //   type: 'select',
+//   //   options: Object.values(Role).map((role) => ({ value: role, label: role })),
+//   //   multiple: true,
+//   // },
+//   { field: 'createTimestamp', type: 'datetime' },
+//   { field: 'fromPricePerHour', type: 'text' },
+//   { field: 'toPricePerHour', type: 'datetime' },
+// ];
+
 interface ComputerDataTableProps
   extends Omit<ComponentProps<typeof DataTable<Computer>>, 'columns' | 'getRowId'> {
   renderColumns?: (existingColumns: typeof computerDataTableColumns) => ColumnDef<Computer>[];

@@ -349,7 +349,7 @@ function ComputerUpdateDialog({
               )}
             />
             <FormField
-              name="positionId"
+              name="position"
               render={({ field }) => (
                 <FormItem className="col-span-1">
                   <FormLabel required>Position</FormLabel>
@@ -378,7 +378,7 @@ function ComputerUpdateDialog({
               )}
             />
             <FormField
-              name="providerId"
+              name="provider"
               render={({ field }) => (
                 <FormItem className="col-span-1">
                   <FormLabel required>Provider</FormLabel>
