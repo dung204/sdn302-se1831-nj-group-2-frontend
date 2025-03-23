@@ -8,13 +8,15 @@ export const usageTrackingSearchParamsSchema = commonSearchParamsSchema.extend({
     'id',
     'user',
     'computer',
-    'startTimestamp',
-    'endTimestamp',
+    'startTimeStamp',
+    'endTimeStamp',
+    'createTimestamp',
+    'deleteTimestamp',
   ]),
   user: z.string().optional(),
   computer: z.string().optional(),
-  startTimestamp: z.string().optional(),
-  endTimestamp: z.string().optional(),
+  startTimeStamp: z.coerce.date().optional(),
+  endTimeStamp: z.coerce.date().optional(),
 });
 
 export type UsageTrackingSearchParams = z.infer<typeof usageTrackingSearchParamsSchema>;

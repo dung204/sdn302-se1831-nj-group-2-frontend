@@ -353,7 +353,15 @@ function UserUpdateDialog({ user, onOpenChange, ...props }: UserUpdateDialogProp
               render={({ field }) => (
                 <FormItem className="col-span-2">
                   <FormLabel>Role</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select
+                    onValueChange={(value) => {
+                      if (value === Role.OWNER || value === Role.GUEST) {
+                        form.setValue('branch', undefined);
+                      }
+                      field.onChange(value);
+                    }}
+                    value={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue />
@@ -370,6 +378,23 @@ function UserUpdateDialog({ user, onOpenChange, ...props }: UserUpdateDialogProp
                   <FormMessage />
                 </FormItem>
               )}
+            />
+            <FormField
+              name="branch"
+              render={({ field }) => {
+                const currentRole = form.watch('role');
+                return currentRole && [Role.OWNER, Role.GUEST].includes(currentRole) ? (
+                  <></>
+                ) : (
+                  <FormItem className="col-span-2">
+                    <FormLabel required>Branch</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
             <DialogFooter className="col-span-2">
               <Button type="submit">Save</Button>
@@ -489,7 +514,15 @@ function UserCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dial
               render={({ field }) => (
                 <FormItem className="col-span-2">
                   <FormLabel>Role</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select
+                    onValueChange={(value) => {
+                      if (value === Role.OWNER || value === Role.GUEST) {
+                        form.setValue('branch', undefined);
+                      }
+                      field.onChange(value);
+                    }}
+                    value={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue />
@@ -506,6 +539,22 @@ function UserCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dial
                   <FormMessage />
                 </FormItem>
               )}
+            />
+            <FormField
+              name="branch"
+              render={({ field }) =>
+                [Role.OWNER, Role.GUEST].includes(form.watch('role')) ? (
+                  <></>
+                ) : (
+                  <FormItem className="col-span-2">
+                    <FormLabel required>Branch</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )
+              }
             />
             <DialogFooter className="col-span-2">
               <Button type="submit">Save</Button>

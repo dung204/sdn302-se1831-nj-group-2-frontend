@@ -1,12 +1,11 @@
-import type { User } from '../user';
-import type { Computer } from './computer.type';
+import type { BaseModel } from '@/common/types';
+import type { Computer } from '@/common/types/api/computer';
+import type { User } from '@/common/types/api/user';
 
-export type UsageTracking = {
+export interface UsageTracking extends BaseModel {
   id: string;
   user: User;
   computer: Computer;
   startTimeStamp: string;
   endTimeStamp: string;
-  createTimestamp: string;
-  deleteTimestamp?: string;
-};
+}

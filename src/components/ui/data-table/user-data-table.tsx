@@ -51,7 +51,7 @@ const filterRules: FilterRule<User>[] = [
     multiple: true,
   },
   { field: 'address', type: 'text' },
-  { field: 'createTimestamp', type: 'datetime' },
+  { field: 'createTimestamp', type: 'datetime', range: true },
 ];
 
 interface UserDataTableProps

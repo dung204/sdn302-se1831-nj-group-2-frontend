@@ -51,7 +51,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -60,6 +59,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { computerHttpClient, usageTrackingHttpClient, userHttpClient } from '@/lib/http';
+
+import { DateTimePicker } from '../ui/date-time-picker';
 
 // import { Checkbox } from '@/components/ui/checkbox';
 
@@ -308,6 +309,7 @@ function UsageUpdateDialog({ usageTracking, onOpenChange, ...props }: UsageUpdat
   });
 
   const handleSubmit = async (payload: UpdateUsageTrackingSchema) => {
+    console.log('payload', payload);
     await triggerUpdateUser(payload);
   };
 
@@ -380,7 +382,10 @@ function UsageUpdateDialog({ usageTracking, onOpenChange, ...props }: UsageUpdat
                 <FormItem className="col-span-2">
                   <FormLabel required>Start time stamp</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <DateTimePicker
+                      date={field.value ? new Date(field.value) : undefined}
+                      setDate={(date) => field.onChange(date ? date.toISOString() : '')}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -393,12 +398,16 @@ function UsageUpdateDialog({ usageTracking, onOpenChange, ...props }: UsageUpdat
                 <FormItem className="col-span-2">
                   <FormLabel required>End time stamp</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <DateTimePicker
+                      date={field.value ? new Date(field.value) : undefined}
+                      setDate={(date) => field.onChange(date ? date.toISOString() : '')}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            {/*  */}
             <DialogFooter className="col-span-2">
               <Button type="submit">Save</Button>
             </DialogFooter>
@@ -442,6 +451,7 @@ function UsageCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dia
   });
 
   const handleSubmit = async (values: CreateUsageTrackingSchema) => {
+    console.log(values);
     await triggerUpdateUser(values);
   };
 
@@ -509,12 +519,15 @@ function UsageCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dia
             />
             {/*  */}
             <FormField
-              name="startTimestamp"
+              name="startTimeStamp"
               render={({ field }) => (
                 <FormItem className="col-span-2">
                   <FormLabel required>Start time stamp</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <DateTimePicker
+                      date={field.value ? new Date(field.value) : undefined}
+                      setDate={(date) => field.onChange(date ? date.toISOString() : '')}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -522,12 +535,15 @@ function UsageCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dia
             />
             {/*  */}
             <FormField
-              name="endTimestamp"
+              name="endTimeStamp"
               render={({ field }) => (
                 <FormItem className="col-span-2">
                   <FormLabel required>End time stamp</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <DateTimePicker
+                      date={field.value ? new Date(field.value) : undefined}
+                      setDate={(date) => field.onChange(date ? date.toISOString() : '')}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
