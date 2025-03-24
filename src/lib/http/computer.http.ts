@@ -10,7 +10,8 @@ import { HttpClient } from './core.http';
 
 class ComputerHttpClient extends HttpClient {
   constructor() {
-    super(URL.parse('/computers', envVariables.API_ENDPOINT)!.href);
+    // super(URL.parse('/computers', envVariables.API_ENDPOINT)!.href);
+    super(`${envVariables.API_ENDPOINT}/computers`);
   }
 
   getAllComputer() {

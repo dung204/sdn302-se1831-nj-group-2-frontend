@@ -1,59 +1,63 @@
-import type { SuccessResponse } from '@/common/types';
+import type { CommonSearchParams, SuccessResponse } from '@/common/types';
 import type {
   CreateUsageTrackingSchema,
   UpdateUsageTrackingSchema,
   UsageTracking,
 } from '@/common/types/api/usage-tracking';
-import { envVariables } from '@/common/utils';
-
-import { HttpClient } from './core.http';
+import { HttpClient } from '@/lib/http/core.http';
 
 class UsageTrackingHttpClient extends HttpClient {
   constructor() {
-    super(URL.parse('/usage-tracking', envVariables.API_ENDPOINT)!.href);
+    super();
   }
 
-  getAllUsageTracking() {
-    return this.get<SuccessResponse<UsageTracking[]>>('/', {
+  public getAllUsageTrackings(params?: CommonSearchParams) {
+    return this.get<SuccessResponse<UsageTracking[]>>('/usage-tracking', {
+      params,
       isPrivateRoute: true,
     });
   }
 
-  getAllDeletedUsageTracking() {
-    return this.get<SuccessResponse<UsageTracking[]>>('/deleted', {
+  public getAllDeletedUsageTrackings(params?: CommonSearchParams) {
+    return this.get<SuccessResponse<UsageTracking[]>>('/usage-tracking/deleted', {
+      params,
       isPrivateRoute: true,
     });
   }
 
-  getUsageTrackingById(id: string) {
-    return this.get<SuccessResponse<UsageTracking>>(`/${id}`, {
+  public getUsageTrackingById(id: string) {
+    return this.get<SuccessResponse<UsageTracking>>(`/usage-tracking/${id}`, {
       isPrivateRoute: true,
     });
   }
 
-  createNewUsageTracking(payload: CreateUsageTrackingSchema) {
-    return this.post<SuccessResponse<UsageTracking>>('/', payload, {
+  public createNewUsageTracking(payload: CreateUsageTrackingSchema) {
+    return this.post<SuccessResponse<UsageTracking>>('/usage-tracking', payload, {
       isPrivateRoute: true,
     });
   }
 
-  updateUsageTracking(id: string) {
+  public updateUsageTracking(id: string) {
     return (payload: UpdateUsageTrackingSchema) =>
-      this.patch<SuccessResponse<UsageTracking>>(`/${id}`, payload, {
+      this.patch<SuccessResponse<UsageTracking>>(`/usage-tracking/${id}`, payload, {
         isPrivateRoute: true,
       });
   }
 
-  softDeleteUsageTracking(id: string) {
-    return this.delete<void>(`/${id}`, {
+  public softDeleteUsageTracking(id: string) {
+    return this.delete(`/usage-tracking/${id}`, {
       isPrivateRoute: true,
     });
   }
 
-  restoreUsageTracking(id: string) {
-    return this.patch<void>(`/restore/${id}`, undefined, {
-      isPrivateRoute: true,
-    });
+  public restoreUsageTracking(id: string) {
+    return this.patch<SuccessResponse<UsageTracking>>(
+      `/usage-tracking/restore/${id}`,
+      {},
+      {
+        isPrivateRoute: true,
+      },
+    );
   }
 }
 
