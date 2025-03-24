@@ -92,7 +92,14 @@ export const navItems: Record<Role, NavItem[]> = {
     },
     {
       title: 'Usage Tracking',
-      url: '/usage-tracking',
+      icon: <Utensils className="size-4" />,
+      urls: [
+        {
+          title: 'Usage Tracking',
+          icon: <Utensils className="size-4" />,
+          url: '/usage-tracking',
+        },
+      ],
     },
   ],
   [Role.BRANCH_ADMIN]: [

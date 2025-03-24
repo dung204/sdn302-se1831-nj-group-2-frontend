@@ -6,6 +6,6 @@ export interface UsageTracking extends BaseModel {
   id: string;
   user: User;
   computer: Computer;
-  startTimestamp: string;
-  endTimestamp: string;
+  startTimeStamp: string;
+  endTimeStamp: string;
 }
