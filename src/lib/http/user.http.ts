@@ -1,7 +1,13 @@
-import type { CommonSearchParams, SuccessResponse } from '@/common/types';
+import type { SuccessResponse } from '@/common/types';
 import type { ChangePasswordSchema } from '@/common/types/api/auth';
-import type { CreateUserSchema, UpdateUserSchema, User } from '@/common/types/api/user';
-import { HttpClient } from '@/lib/http/core.http';
+import type {
+  CreateUserSchema,
+  UpdateUserSchema,
+  User,
+  UserSearchParams,
+} from '@/common/types/api/user';
+
+import { HttpClient } from './core.http';
 
 class UserHttpClient extends HttpClient {
   constructor() {
@@ -26,14 +32,14 @@ class UserHttpClient extends HttpClient {
     });
   }
 
-  public getAllUsers(params?: CommonSearchParams) {
+  public getAllUsers(params?: UserSearchParams) {
     return this.get<SuccessResponse<User[]>>('/users', {
       params,
       isPrivateRoute: true,
     });
   }
 
-  public getAllDeletedUsers(params?: CommonSearchParams) {
+  public getAllDeletedUsers(params?: UserSearchParams) {
     return this.get<SuccessResponse<User[]>>('/users/deleted', {
       params,
       isPrivateRoute: true,

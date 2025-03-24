@@ -5,7 +5,12 @@ import { Role } from '@/common/types/api/user';
 import { SortingUtils } from '@/common/utils';
 
 export const userSearchParamsSchema = commonSearchParamsSchema.extend({
-  sorting: SortingUtils.getSortingValueSchema(['id', 'firstName', 'lastName', 'deleteTimestamp']),
+  sorting: SortingUtils.getSortingValueSchema([
+    'id',
+    'firstName',
+    'lastName',
+    'deleteTimestamp',
+  ]).optional(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   citizenNumber: z.string().optional(),
