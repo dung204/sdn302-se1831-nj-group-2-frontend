@@ -6,8 +6,7 @@ import type {
   UpdateComputerSchema,
 } from '@/common/types/api/computer';
 import { envVariables } from '@/common/utils';
-
-import { HttpClient } from './core.http';
+import { HttpClient } from '@/lib/http/core.http';
 
 class ComputerHttpClient extends HttpClient {
   constructor() {
@@ -21,42 +20,46 @@ class ComputerHttpClient extends HttpClient {
     });
   }
 
-  getAllDeletedComputer(params?: ComputerSearchParams) {
+  getAllDeletedComputers(params?: ComputerSearchParams) {
     return this.get<SuccessResponse<Computer[]>>('/deleted', {
       isPrivateRoute: true,
       params,
     });
   }
 
-  getComputerById(id: string) {
+  public getComputerById(id: string) {
     return this.get<SuccessResponse<Computer>>(`/${id}`, {
       isPrivateRoute: true,
     });
   }
 
-  createNewComputer(payload: CreateComputerSchema) {
+  public createNewComputer(payload: CreateComputerSchema) {
     return this.post<SuccessResponse<Computer>>('/', payload, {
       isPrivateRoute: true,
     });
   }
 
-  updateComputer(id: string) {
+  public updateComputer(id: string) {
     return (payload: UpdateComputerSchema) =>
       this.patch<SuccessResponse<Computer>>(`/${id}`, payload, {
         isPrivateRoute: true,
       });
   }
 
-  softDeleteComputer(id: string) {
-    return this.delete<void>(`/${id}`, {
+  public softDeleteComputer(id: string) {
+    return this.delete(`/${id}`, {
       isPrivateRoute: true,
     });
   }
 
-  restoreComputer(id: string) {
-    return this.patch<void>(`/restore/${id}`, undefined, {
-      isPrivateRoute: true,
-    });
+  public restoreComputer(id: string) {
+    return this.patch<SuccessResponse<Computer>>(
+      `/restore/${id}`,
+      {},
+      {
+        isPrivateRoute: true,
+      },
+    );
   }
 }
 

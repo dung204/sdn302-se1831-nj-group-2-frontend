@@ -38,7 +38,7 @@ export function CurrencyInput({
 
     if (/^(\d+)(\.\d*)?$/g.test(newValue)) {
       const newNumberValue = Number(newValue);
-      setTextValue(newValue.replaceAll(/^0+/g, ''));
+      setTextValue(newValue.replaceAll(/^0+(?=(0[1-9]?))/g, ''));
       onChange?.(newNumberValue);
     }
   };
