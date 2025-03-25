@@ -11,12 +11,6 @@ export type User = BaseModel & {
   citizenNumber: string | null;
   phoneNumber: string | null;
   availableTime: number | null;
-} & (
-    | {
-        role: Role.OWNER | Role.GUEST;
-      }
-    | {
-        role: Role.BRANCH_ADMIN | Role.STAFF;
-        branch: Branch; // Branch Admin and Staff have a branch
-      }
-  );
+  branch?: Branch;
+  role: Role;
+};

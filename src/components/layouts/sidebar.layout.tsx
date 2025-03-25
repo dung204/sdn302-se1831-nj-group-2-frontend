@@ -221,6 +221,9 @@ export function SidebarLayout({ ...props }: ComponentProps<typeof Sidebar>) {
           </div>
           <div className="flex flex-col gap-0.5 leading-none">
             <span className="font-semibold">Internet café</span>
+            {user?.role !== Role.OWNER && (
+              <span className="font-semibold">Branch: {user?.branch?.name}</span>
+            )}
           </div>
         </SidebarMenuButton>
       </SidebarHeader>
