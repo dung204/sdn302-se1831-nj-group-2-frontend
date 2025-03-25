@@ -20,7 +20,7 @@ class ComputerHttpClient extends HttpClient {
     });
   }
 
-  getAllDeletedComputer(params?: ComputerSearchParams) {
+  getAllDeletedComputers(params?: ComputerSearchParams) {
     return this.get<SuccessResponse<Computer[]>>('/deleted', {
       isPrivateRoute: true,
       params,
@@ -28,33 +28,33 @@ class ComputerHttpClient extends HttpClient {
   }
 
   public getComputerById(id: string) {
-    return this.get<SuccessResponse<Computer>>(`/computers/${id}`, {
+    return this.get<SuccessResponse<Computer>>(`/${id}`, {
       isPrivateRoute: true,
     });
   }
 
   public createNewComputer(payload: CreateComputerSchema) {
-    return this.post<SuccessResponse<Computer>>('/computers', payload, {
+    return this.post<SuccessResponse<Computer>>('/', payload, {
       isPrivateRoute: true,
     });
   }
 
   public updateComputer(id: string) {
     return (payload: UpdateComputerSchema) =>
-      this.patch<SuccessResponse<Computer>>(`/computers/${id}`, payload, {
+      this.patch<SuccessResponse<Computer>>(`/${id}`, payload, {
         isPrivateRoute: true,
       });
   }
 
   public softDeleteComputer(id: string) {
-    return this.delete(`/computers/${id}`, {
+    return this.delete(`/${id}`, {
       isPrivateRoute: true,
     });
   }
 
   public restoreComputer(id: string) {
     return this.patch<SuccessResponse<Computer>>(
-      `/computers/restore/${id}`,
+      `/restore/${id}`,
       {},
       {
         isPrivateRoute: true,

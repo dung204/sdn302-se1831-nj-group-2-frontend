@@ -1,10 +1,9 @@
 import { z } from 'zod';
 
-import { commonSearchParamsSchema } from '@/common/types';
+import { DeviceStatus, commonSearchParamsSchema } from '@/common/types';
 import { SortingUtils } from '@/common/utils';
 
 export const computerSearchParamsSchema = commonSearchParamsSchema.extend({
-  // Trường sorting hỗ trợ sắp xếp theo các thuộc tính của Computer
   sorting: SortingUtils.getSortingValueSchema([
     'id',
     'name',
@@ -13,11 +12,15 @@ export const computerSearchParamsSchema = commonSearchParamsSchema.extend({
     'cpu',
     'ram',
     'storage',
-  ]),
-
+  ]).optional(),
   name: z.string().optional(),
   position: z.string().optional(),
-  status: z.enum(['NORMAL', 'BROKEN', 'MAINTENANCE']).optional(),
+  status: z
+    .union([
+      z.nativeEnum(DeviceStatus).transform((value) => value.split(',')),
+      z.array(z.nativeEnum(DeviceStatus)),
+    ])
+    .optional(),
   pricePerHour: z.number().optional(),
   cpu: z.string().optional(),
   ram: z.string().optional(),

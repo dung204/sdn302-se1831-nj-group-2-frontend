@@ -1,28 +1,23 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
-import { Navigate, getRouteApi } from '@tanstack/react-router';
+import { Navigate, getRouteApi, useNavigate } from '@tanstack/react-router';
 import type { RowSelectionState } from '@tanstack/react-table';
 import { Edit, Ellipsis, EyeIcon, Plus, Trash2 } from 'lucide-react';
-import { type ComponentProps, useState } from 'react';
+import { type ComponentProps, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/common/hooks';
-import { type SuccessResponse } from '@/common/types';
+import { DeviceStatus, type SuccessResponse } from '@/common/types';
 import {
   type Computer,
   type CreateComputerSchema,
-  DeviceStatus,
-  type Position,
-  type Provider,
   type UpdateComputerSchema,
+  computerSearchParamsSchema,
   createComputerSchema,
   updateComputerSchema,
 } from '@/common/types/api/computer';
-import type { Peripheral } from '@/common/types/api/peripheral';
 import { Role } from '@/common/types/api/user';
-import { computerSearchParamsSchema } from '@/common/types/api/user/computer-search-param.type';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,8 +27,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  AsyncSelect,
+  getPeripheralAsyncSelectOptions,
+  getPositionAsyncSelectOptions,
+  getProviderAsyncSelectOptions,
+} from '@/components/ui/async-select';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { ComputerDataTable } from '@/components/ui/data-table';
 import {
   Dialog,
@@ -57,6 +59,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -64,66 +67,47 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { peripheralHttpClient, positionHttpClient, providerHttpClient } from '@/lib/http';
-import { computerHttpClient } from '@/lib/http/computer.http';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { computerHttpClient } from '@/lib/http';
 
 const route = getRouteApi('/_non-auth-layout/computers/');
 
 export function ManageComputersPage() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
   const searchParams = computerSearchParamsSchema.parse(route.useSearch());
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const { data: res, isLoading } = useQuery({
     queryKey: ['computers', 'all', searchParams],
     queryFn: () => computerHttpClient.getAllComputers(searchParams),
   });
 
-  const { data: peripheralsResponse, isLoading: isLoadingPeripherals } = useQuery<
-    SuccessResponse<Peripheral[]>
-  >({
-    queryKey: ['peripherals', 'all'],
-    queryFn: () => peripheralHttpClient.getAllPeripheral(),
-  });
-  const peripherals = peripheralsResponse?.data || [];
-  // Lấy danh sách providers từ API
-  const { data: providersResponse, isLoading: isLoadingProviders } = useQuery<
-    SuccessResponse<Provider[]>
-  >({
-    queryKey: ['providers', 'all'],
-    queryFn: () => providerHttpClient.getAllProviders(),
-  });
-  const providers = providersResponse?.data || [];
-  // Lấy danh sách positions từ API
-  const { data: positionsResponse, isLoading: isLoadingPositions } = useQuery<
-    SuccessResponse<Position[]>
-  >({
-    queryKey: ['positions', 'all'],
-    queryFn: async () => {
-      const response = await positionHttpClient.getAllPositions();
-      return {
-        data: response.data.map((position) => ({
-          ...position,
-          branch: String(position.branch), // Ensure branch is a string
-        })),
-        meta: response.meta,
-      };
-    },
-  });
-  const positions = positionsResponse?.data || [];
-
-  console.log('providersResponse?.data', providersResponse?.data);
-  console.log('positionsResponse?.data', positionsResponse?.data);
+  const [computerToViewDetails, setComputerToViewDetails] = useState<Computer | null>(null);
+  const [isViewDetailsDialogOpen, setIsViewDetailsDialogOpen] = useState(false);
   const [computersToDelete, setComputersToDelete] = useState<RowSelectionState>({});
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [computerToUpdate, setComputerToUpdate] = useState<Computer | null>(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
+  useEffect(() => {
+    if (user?.role === Role.OWNER) {
+      document.title = 'Existing computers | Internet Cafe Management';
+    }
+  }, [user]);
+
   if (!user) {
     return <Navigate to="/login" />;
   }
-  if (![Role.BRANCH_ADMIN, Role.STAFF].includes(user.role)) {
+
+  if (user.role !== Role.BRANCH_ADMIN) {
     return <Navigate to="/" />;
   }
 
@@ -148,7 +132,6 @@ export function ManageComputersPage() {
         pagination={res?.meta.pagination}
         sorting={res?.meta.sorting}
         filter={res?.meta.filter}
-        enableRowSelection={true} // Cho phép chọn tất cả các hàng
         onRowSelectionChange={setComputersToDelete}
         state={{
           rowSelection: computersToDelete,
@@ -181,36 +164,47 @@ export function ManageComputersPage() {
           {
             id: 'actions',
             header: '',
-            cell: ({ row }) => (
-              <DropdownMenu>
-                <DropdownMenuTrigger className="flex size-full items-center justify-center">
-                  <Ellipsis className="size-6" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={(e) => e.stopPropagation()}
-                    onSelect={() => {
-                      setComputerToUpdate(row.original);
-                      setIsUpdateDialogOpen(true);
-                    }}
-                  >
-                    <Edit className="size-4" /> Edit
-                  </DropdownMenuItem>
-                  {Object.keys(computersToDelete).length === 0 && (
+            cell: ({ row }) => {
+              return (
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="flex size-full items-center justify-center">
+                    <Ellipsis className="size-6" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
                     <DropdownMenuItem
-                      className="text-danger focus:bg-danger focus:text-danger-foreground"
                       onClick={(e) => e.stopPropagation()}
                       onSelect={() => {
-                        setComputersToDelete({ [row.original.id]: true });
-                        setIsDeleteDialogOpen(true);
+                        setComputerToViewDetails(row.original);
+                        setIsViewDetailsDialogOpen(true);
                       }}
                     >
-                      <Trash2 className="size-4" /> Delete
+                      <EyeIcon className="size-4" /> View details
                     </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ),
+                    <DropdownMenuItem
+                      onClick={(e) => e.stopPropagation()}
+                      onSelect={() => {
+                        setComputerToUpdate(row.original);
+                        setIsUpdateDialogOpen(true);
+                      }}
+                    >
+                      <Edit className="size-4" /> Edit
+                    </DropdownMenuItem>
+                    {Object.keys(computersToDelete).length === 0 && (
+                      <DropdownMenuItem
+                        className="text-danger focus:bg-danger focus:text-danger-foreground"
+                        onClick={(e) => e.stopPropagation()}
+                        onSelect={() => {
+                          setComputersToDelete({ [row.original.id]: true });
+                          setIsDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="size-4" /> Delete
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            },
             enableSorting: false,
             enableHiding: false,
             enableResizing: false,
@@ -227,14 +221,13 @@ export function ManageComputersPage() {
         computer={computerToUpdate!}
         open={isUpdateDialogOpen}
         onOpenChange={setIsUpdateDialogOpen}
-        providers={providers}
-        positions={positions}
-        peripherals={peripherals}
-        isLoadingProviders={isLoadingProviders}
-        isLoadingPositions={isLoadingPositions}
-        isLoadingPeripherals={isLoadingPeripherals}
       />
       <ComputerCreateDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
+      <ComputerViewDetailsDialog
+        computer={computerToViewDetails}
+        open={isViewDetailsDialogOpen}
+        onOpenChange={setIsViewDetailsDialogOpen}
+      />
     </div>
   );
 }
@@ -245,7 +238,8 @@ interface ComputerDeleteDialogProps extends ComponentProps<typeof AlertDialog> {
 }
 
 function ComputerDeleteDialog({ computerIds, onDelete, ...props }: ComputerDeleteDialogProps) {
-  // const navigate = useNavigate();
+  const searchParams = computerSearchParamsSchema.parse(route.useSearch());
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const { mutateAsync: triggerDeleteComputers, isPending } = useMutation({
@@ -257,6 +251,20 @@ function ComputerDeleteDialog({ computerIds, onDelete, ...props }: ComputerDelet
     },
     onSuccess: async ({ fulfilled, rejected }) => {
       await queryClient.invalidateQueries({ queryKey: ['computers', 'all'] });
+      const res = queryClient.getQueryData<SuccessResponse<Computer[]>>([
+        'computers',
+        'all',
+        searchParams,
+      ]);
+      if (
+        res!.meta.pagination.page > res!.meta.pagination.totalPage &&
+        res!.meta.pagination.totalPage > 0
+      ) {
+        navigate({
+          to: '/computers',
+          search: { ...searchParams, page: res!.meta.pagination.totalPage },
+        });
+      }
       toast.info(`Result: ${fulfilled?.length || 0} deleted, ${rejected?.length || 0} failed`);
       onDelete?.(computerIds);
     },
@@ -287,46 +295,99 @@ function ComputerDeleteDialog({ computerIds, onDelete, ...props }: ComputerDelet
   );
 }
 
-// interface ComputerUpdateDialogProps extends ComponentProps<typeof Dialog> {
-//   computer: Computer | null;
-// }
-interface ComputerUpdateDialogProps extends ComponentProps<typeof Dialog> {
+interface ComputerViewDetailsDialogProps extends ComponentProps<typeof Dialog> {
   computer: Computer | null;
-  providers: Provider[];
-  positions: Position[];
-  peripherals: Peripheral[];
-  isLoadingProviders: boolean;
-  isLoadingPositions: boolean;
-  isLoadingPeripherals: boolean;
 }
 
-function ComputerUpdateDialog({
-  computer,
-  onOpenChange,
-  providers,
-  positions,
-  peripherals,
-  isLoadingProviders,
-  isLoadingPositions,
-  isLoadingPeripherals,
-  ...props
-}: ComputerUpdateDialogProps) {
+function ComputerViewDetailsDialog({ computer, ...props }: ComputerViewDetailsDialogProps) {
+  return (
+    <Dialog {...props}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Computer details</DialogTitle>
+        </DialogHeader>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-1">
+            <p className="text-sm text-muted-foreground">Name</p>
+            <p className="text-lg font-semibold">{computer?.name}</p>
+          </div>
+          <div className="col-span-1">
+            <p className="text-sm text-muted-foreground">Position</p>
+            <p className="text-lg font-semibold">{computer?.position.name}</p>
+          </div>
+          <div className="col-span-1">
+            <p className="text-sm text-muted-foreground">Status</p>
+            <p className="text-lg font-semibold">{computer?.status}</p>
+          </div>
+          <div className="col-span-1">
+            <p className="text-sm text-muted-foreground">Price/Hour</p>
+            <p className="text-lg font-semibold">${computer?.pricePerHour.toFixed(2)}</p>
+          </div>
+          <div className="col-span-1">
+            <p className="text-sm text-muted-foreground">CPU</p>
+            <p className="text-lg font-semibold">{computer?.cpu}</p>
+          </div>
+          <div className="col-span-1">
+            <p className="text-sm text-muted-foreground">RAM</p>
+            <p className="text-lg font-semibold">{computer?.ram}</p>
+          </div>
+          <div className="col-span-1">
+            <p className="text-sm text-muted-foreground">Storage</p>
+            <p className="text-lg font-semibold">{computer?.storage}</p>
+          </div>
+          <div className="col-span-1">
+            <p className="text-sm text-muted-foreground">Provider</p>
+            <p className="text-lg font-semibold">{computer?.provider.name}</p>
+          </div>
+          <div className="col-span-2">
+            <p className="text-sm text-muted-foreground">Provider</p>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>#</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {computer?.peripherals.map((p, index) => (
+                  <TableRow key={p.id}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{p.name}</TableCell>
+                    <TableCell>{p.type}</TableCell>
+                    <TableCell>{p.status}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+interface ComputerUpdateDialogProps extends ComponentProps<typeof Dialog> {
+  computer: Computer | null;
+}
+
+function ComputerUpdateDialog({ computer, onOpenChange, ...props }: ComputerUpdateDialogProps) {
   const form = useForm<UpdateComputerSchema>({
     resolver: zodResolver(updateComputerSchema),
     values: {
       name: !computer ? '' : computer.name,
-      position: !computer ? '' : computer.position.id, // Use positionId instead of the whole object
+      position: !computer ? '' : computer.position.id,
       status: !computer ? DeviceStatus.NORMAL : computer.status,
+      provider: !computer ? '' : computer.provider.id,
       pricePerHour: !computer ? 0 : computer.pricePerHour,
       cpu: !computer ? '' : computer.cpu,
       ram: !computer ? '' : computer.ram,
       storage: !computer ? '' : computer.storage,
-      provider: !computer ? '' : computer.provider.id, // Use providerId instead of the whole object
-      peripherals: !computer ? [] : computer.peripherals.map((peripheral) => peripheral.id),
+      peripherals: !computer ? [] : computer.peripherals.map((p) => p.id),
     },
   });
 
-  console.log(form, 'values');
   const queryClient = useQueryClient();
   const { mutateAsync: triggerUpdateComputer } = useMutation({
     mutationFn: computerHttpClient.updateComputer(computer?.id ?? ''),
@@ -356,186 +417,141 @@ function ComputerUpdateDialog({
           <DialogTitle>Edit computer info</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form className="grid grid-cols-2 gap-4" onSubmit={form.handleSubmit(handleSubmit)}>
-            <FormField
-              name="name"
-              render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel required>Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name="peripherals.id" // Match the schema field name (lowercase)
-              render={() => (
-                <FormItem className="col-span-1">
-                  <FormLabel required>Peripherals</FormLabel>{' '}
-                  {/* Corrected label to "Peripherals" */}
-                  <Select>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={isLoadingPeripherals ? 'Loading...' : 'Select a peripheral'}
+          <form onSubmit={form.handleSubmit(handleSubmit)}>
+            <ScrollArea className="h-96 w-full">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel required>Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel required>Status</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Object.values(DeviceStatus).map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {status}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="position"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel required>Position</FormLabel>
+                      <FormControl>
+                        <AsyncSelect
+                          value={field.value}
+                          onChange={field.onChange}
+                          {...getPositionAsyncSelectOptions('name')}
                         />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {peripherals.map((peripheral) => (
-                        <SelectItem key={peripheral.id} value={peripheral.id}>
-                          {peripheral.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name="position"
-              render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel required>Position</FormLabel>
-                  <Select
-                    onValueChange={(value) => form.setValue('position', value)} // Only set the ID
-                    value={field.value}
-                    disabled={isLoadingPositions}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={isLoadingPositions ? 'Loading...' : 'Select a position'}
-                        />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {positions.map((position) => (
-                        <SelectItem key={position.id} value={position.id}>
-                          {position.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name="provider"
-              render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel required>Provider</FormLabel>
-                  <Select
-                    onValueChange={(value) => form.setValue('provider', value)} // Only set the ID
-                    value={field.value}
-                    disabled={isLoadingProviders}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={isLoadingProviders ? 'Loading...' : 'Select a provider'}
-                        />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {providers.length > 0 ? (
-                        providers.map((provider) => (
-                          <SelectItem key={provider.id} value={provider.id}>
-                            {provider.name}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem disabled value="">
-                          No providers available
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name="status"
-              render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Object.values(DeviceStatus).map((status) => (
-                        <SelectItem key={status} value={status}>
-                          {status}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name="pricePerHour"
-              render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel required>Price/Hour</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))} // Ensure the value is a number
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name="cpu"
-              render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel required>CPU</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name="ram"
-              render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel required>RAM</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name="storage"
-              render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel required>Storage</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter className="col-span-2">
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="pricePerHour"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel required>Price/Hour</FormLabel>
+                      <FormControl>
+                        <CurrencyInput value={field.value} onChange={field.onChange} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="cpu"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel required>CPU</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="ram"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel required>RAM</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="storage"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel required>Storage</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="provider"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel required>Provider</FormLabel>
+                      <AsyncSelect
+                        value={field.value}
+                        onChange={field.onChange}
+                        {...getProviderAsyncSelectOptions('name')}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="peripherals"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Peripherals</FormLabel>
+                      <AsyncSelect
+                        multiple
+                        value={field.value}
+                        onChange={field.onChange}
+                        {...getPeripheralAsyncSelectOptions('name')}
+                        placeholder="Select peripherals..."
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </ScrollArea>
+            <DialogFooter className="col-span-2 mt-4">
               <Button type="submit">Save</Button>
             </DialogFooter>
           </form>
@@ -546,75 +562,33 @@ function ComputerUpdateDialog({
 }
 
 function ComputerCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dialog>) {
-  // Lấy danh sách providers từ API
-  // Khai báo kiểu dữ liệu cho useQuery
-  const { data: providersResponse, isLoading: isLoadingProviders } = useQuery<
-    SuccessResponse<Provider[]>
-  >({
-    queryKey: ['providers', 'all'],
-    queryFn: () => providerHttpClient.getAllProviders(),
-  });
-
-  const { data: peripheralsResponse, isLoading: isLoadingPeripherals } = useQuery<
-    SuccessResponse<Peripheral[]>
-  >({
-    queryKey: ['peripherals', 'all'],
-    queryFn: () => peripheralHttpClient.getAllPeripheral(),
-  });
-
-  console.log(peripheralsResponse, 'peripheralsResponse');
-  // Lấy danh sách positions từ API
-  const { data: positionsResponse, isLoading: isLoadingPositions } = useQuery<
-    SuccessResponse<Position[]>
-  >({
-    queryKey: ['positions', 'all'],
-    queryFn: async () => {
-      const response = await positionHttpClient.getAllPositions();
-      return {
-        ...response,
-        data: response.data.map((position) => ({
-          ...position,
-          branch: String(position.branch), // Ensure branch is a string
-        })),
-      };
-    },
-  });
-
-  // console.log("providersResponse?.data", providersResponse?.data)
-  // console.log("positionsResponse?.data", positionsResponse?.data)
   const form = useForm<CreateComputerSchema>({
     resolver: zodResolver(createComputerSchema),
     values: {
       name: '',
       position: '',
       status: DeviceStatus.NORMAL,
+      provider: '',
       pricePerHour: 0,
       cpu: '',
       ram: '',
       storage: '',
-      provider: '',
       peripherals: [],
     },
   });
 
   const queryClient = useQueryClient();
-  const { mutateAsync: triggerCreateComputer } = useMutation({
+  const { mutateAsync: triggerUpdateComputer } = useMutation({
     mutationFn: (payload: CreateComputerSchema) => computerHttpClient.createNewComputer(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['computers', 'all'] });
       toast.success('Computer created successfully!');
       handleOpenChange(false);
     },
-    onError: (error) => {
-      console.error('Error creating computer:', error); // Xử lý lỗi và hiển thị trên console
-      toast.error('Failed to create computer.'); // Hiển thị thông báo lỗi
-    },
   });
 
   const handleSubmit = async (values: CreateComputerSchema) => {
-    console.log('handleSubmit is called'); // Kiểm tra xem hàm có được gọi không
-    console.log('Form data on submit:', values); // Kiểm tra dữ liệu form
-    await triggerCreateComputer(values);
+    await triggerUpdateComputer(values);
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -632,214 +606,142 @@ function ComputerCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof 
           <DialogTitle>Add new computer</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form className="grid grid-cols-2 gap-4" onSubmit={form.handleSubmit(handleSubmit)}>
-            <FormField
-              name="name"
-              render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel required>Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              name="peripherals.id"
-              render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel required>Peripheral</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      form.setValue('peripherals', [value]); // Wrap value in an array
-                    }}
-                    value={field.value}
-                    disabled={isLoadingPositions}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={isLoadingPeripherals ? 'Loading...' : 'Select a peripherals'}
+          <form onSubmit={form.handleSubmit(handleSubmit)}>
+            <ScrollArea className="h-96 w-full">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel required>Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel required>Status</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Object.values(DeviceStatus).map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {status}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="position"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel required>Position</FormLabel>
+                      <FormControl>
+                        <AsyncSelect
+                          value={field.value}
+                          onChange={field.onChange}
+                          {...getPositionAsyncSelectOptions('name')}
                         />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {peripheralsResponse?.data && peripheralsResponse.data.length > 0 ? (
-                        peripheralsResponse?.data.map((peripheral) => (
-                          <SelectItem key={peripheral.id} value={peripheral.id}>
-                            {peripheral.name}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem disabled value="">
-                          No peripheral available
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              name="position.id"
-              render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel required>Position</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      form.setValue('position', value); // Set only the id in the form
-                    }}
-                    value={field.value}
-                    disabled={isLoadingPositions}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={isLoadingPositions ? 'Loading...' : 'Select a position'}
-                        />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {positionsResponse?.data && positionsResponse?.data.length > 0 ? (
-                        positionsResponse?.data.map((position) => (
-                          <SelectItem key={position.id} value={position.id}>
-                            {position.name}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem disabled value="">
-                          No positions available
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              name="provider.id"
-              render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel required>Provider</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      form.setValue('provider', value);
-                    }}
-                    value={field.value}
-                    disabled={isLoadingProviders}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={isLoadingProviders ? 'Loading...' : 'Select a provider'}
-                        />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {providersResponse?.data && providersResponse?.data.length > 0 ? (
-                        providersResponse?.data.map((provider) => (
-                          <SelectItem key={provider.id} value={provider.id}>
-                            {provider.name}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem disabled value="">
-                          No providers available
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              name="status"
-              render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Object.values(DeviceStatus).map((status) => (
-                        <SelectItem key={status} value={status}>
-                          {status}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name="pricePerHour"
-              render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel required>Price/Hour</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))} // Ensure the value is a number
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              name="cpu"
-              render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel required>CPU</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name="ram"
-              render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel required>RAM</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name="storage"
-              render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel required>Storage</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter className="col-span-2">
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Saving...' : 'Save'}
-              </Button>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="pricePerHour"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel required>Price/Hour</FormLabel>
+                      <FormControl>
+                        <CurrencyInput value={field.value} onChange={field.onChange} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="cpu"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel required>CPU</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="ram"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel required>RAM</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="storage"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel required>Storage</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="provider"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel required>Provider</FormLabel>
+                      <AsyncSelect
+                        value={field.value}
+                        onChange={field.onChange}
+                        {...getProviderAsyncSelectOptions('name')}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="peripherals"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Peripherals</FormLabel>
+                      <AsyncSelect
+                        multiple
+                        value={field.value}
+                        onChange={field.onChange}
+                        {...getPeripheralAsyncSelectOptions('name')}
+                        placeholder="Select peripherals..."
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </ScrollArea>
+            <DialogFooter className="col-span-2 mt-4">
+              <Button type="submit">Save</Button>
             </DialogFooter>
           </form>
         </Form>

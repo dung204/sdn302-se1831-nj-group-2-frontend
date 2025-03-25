@@ -1,14 +1,17 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { type ComponentProps } from 'react';
 
+import { DeviceStatus } from '@/common/types';
 import type { Computer } from '@/common/types/api/computer';
+import { getProviderAsyncSelectOptions } from '@/components/ui/async-select';
 
-import { DataTable, DataTableHeader } from './data-table';
+import { DataTable, DataTableHeader, type FilterRule } from './data-table';
 
 const computerDataTableColumns: ColumnDef<Computer>[] = [
   {
-    accessorKey: 'id',
-    header: ({ column }) => <DataTableHeader column={column} title="ID" />,
+    id: '#',
+    header: '#',
+    cell: ({ row }) => row.index + 1,
   },
   {
     accessorKey: 'name',
@@ -28,52 +31,15 @@ const computerDataTableColumns: ColumnDef<Computer>[] = [
   },
   {
     accessorKey: 'pricePerHour',
-    header: ({ column }) => <DataTableHeader column={column} title="Price/Hour" />,
+    header: 'Price/Hour',
     cell: ({ row }) => {
       const price = row.getValue<number>('pricePerHour');
       return <span>${price.toFixed(2)}</span>;
     },
   },
   {
-    accessorKey: 'cpu',
-    header: ({ column }) => <DataTableHeader column={column} title="CPU" />,
-  },
-  {
-    accessorKey: 'ram',
-    header: ({ column }) => <DataTableHeader column={column} title="RAM" />,
-  },
-  {
-    accessorKey: 'storage',
-    header: ({ column }) => <DataTableHeader column={column} title="Storage" />,
-  },
-  {
     accessorKey: 'provider.name',
-    header: ({ column }) => <DataTableHeader column={column} title="Provider" />,
-  },
-  {
-    accessorKey: 'peripherals',
-    header: ({ column }) => <DataTableHeader column={column} title="Peripherals" />,
-    cell: ({ row }) => {
-      const rowPeripherals = row.getValue<
-        Array<{
-          id: string;
-          status: string;
-          name: string;
-        }>
-      >('peripherals');
-
-      if (!rowPeripherals || rowPeripherals.length === 0) {
-        return <span>No peripherals</span>;
-      }
-
-      const peripheralNames = rowPeripherals.map((p) => p.name || 'Unknown').join(', ');
-      const peripheralstatus = rowPeripherals.map((p) => p.status || 'Unknown').join(', ');
-      return (
-        <span>
-          {peripheralNames}-{peripheralstatus}
-        </span>
-      );
-    },
+    header: 'Provider',
   },
   {
     accessorKey: 'createTimestamp',
@@ -99,6 +65,20 @@ const computerDataTableColumns: ColumnDef<Computer>[] = [
   },
 ];
 
+const filterRules: FilterRule<Computer>[] = [
+  { field: 'name', type: 'text' },
+  { field: 'provider', type: 'select', async: true, ...getProviderAsyncSelectOptions('name') },
+  {
+    field: 'status',
+    type: 'select',
+    multiple: true,
+    options: Object.values(DeviceStatus).map((status) => ({ value: status, label: status })),
+  },
+  { field: 'pricePerHour', type: 'number', range: true, currency: true },
+  { field: 'createTimestamp', type: 'datetime', range: true },
+  { field: 'deleteTimestamp', type: 'datetime', range: true },
+];
+
 interface ComputerDataTableProps
   extends Omit<ComponentProps<typeof DataTable<Computer>>, 'columns' | 'getRowId'> {
   renderColumns?: (existingColumns: typeof computerDataTableColumns) => ColumnDef<Computer>[];
@@ -110,6 +90,7 @@ export function ComputerDataTable({ renderColumns, filter, ...props }: ComputerD
       getRowId={(row) => row.id}
       columns={!renderColumns ? computerDataTableColumns : renderColumns(computerDataTableColumns)}
       filter={filter}
+      filterRules={filterRules}
       {...props}
     />
   );
