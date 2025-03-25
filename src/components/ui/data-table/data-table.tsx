@@ -21,6 +21,7 @@ import type {
   Pagination as PaginationMetadata,
   Sorting as SortingMetadata,
 } from '@/common/types';
+import { AsyncSelect, type AsyncSelectProps } from '@/components/ui/async-select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CurrencyInput } from '@/components/ui/currency-input';
@@ -67,7 +68,9 @@ export type FilterRule<TData> = { field: keyof TData } & (
   | { type: 'text' }
   | { type: 'datetime'; range?: boolean }
   | { type: 'number'; range?: boolean; currency?: boolean }
-  | { type: 'select'; options: FilterRuleSelectOption[]; multiple?: boolean }
+  | { type: 'select'; async?: false; options: FilterRuleSelectOption[]; multiple?: boolean }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | ({ type: 'select'; async: true } & Omit<AsyncSelectProps<any>, 'value' | 'onChange'>)
 );
 
 interface DataTableProps<TData>
@@ -440,39 +443,65 @@ function FilterDialog<TData>({
                 break;
               }
               case 'select':
-                FilterComp = !rule.multiple ? (
-                  <Select
-                    defaultValue={filterState[field]?.[0] as string}
-                    onValueChange={(value) => setFilterState({ ...filterState, [field]: [value] })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={`Select a ${field}...`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {rule.options.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <TagInput
-                    placeholder={`Select ${field}s...`}
-                    tags={rule.options}
-                    selectedValues={filterState[field] as string[]}
-                    onTagsChange={(tags) => {
-                      if (tags.length === 0) {
-                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        const { [field]: _, ...rest } = filterState;
-                        setFilterState(rest);
-                        return;
+                if (!rule.async) {
+                  FilterComp = !rule.multiple ? (
+                    <Select
+                      defaultValue={filterState[field]?.[0] as string}
+                      onValueChange={(value) =>
+                        setFilterState({ ...filterState, [field]: [value] })
                       }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={`Select a ${field}...`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {rule.options.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <TagInput
+                      placeholder={`Select ${field}s...`}
+                      tags={rule.options}
+                      selectedValues={filterState[field] as string[]}
+                      onTagsChange={(tags) => {
+                        if (tags.length === 0) {
+                          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                          const { [field]: _, ...rest } = filterState;
+                          setFilterState(rest);
+                          return;
+                        }
 
-                      setFilterState({ ...filterState, [field]: tags.map((tag) => tag.value) });
-                    }}
+                        setFilterState({ ...filterState, [field]: tags.map((tag) => tag.value) });
+                      }}
+                    />
+                  );
+                  break;
+                }
+
+                FilterComp = (
+                  <AsyncSelect
+                    queryKey={rule.queryKey}
+                    queryFn={rule.queryFn}
+                    renderOption={rule.renderOption}
+                    getOptionValue={rule.getOptionValue}
+                    getDisplayValue={rule.getDisplayValue}
+                    notFound={rule.notFound}
+                    loadingSkeleton={rule.loadingSkeleton}
+                    label={rule.label}
+                    placeholder={rule.placeholder}
+                    value={filterState[field] as string}
+                    onChange={(value) => setFilterState({ ...filterState, [field]: value })}
+                    disabled={rule.disabled}
+                    className={rule.className}
+                    triggerClassName={rule.triggerClassName}
+                    noResultsMessage={rule.noResultsMessage}
+                    clearable={rule.clearable}
                   />
                 );
                 break;

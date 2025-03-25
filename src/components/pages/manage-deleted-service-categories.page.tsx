@@ -1,16 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getRouteApi, useNavigate } from '@tanstack/react-router';
 import type { RowSelectionState } from '@tanstack/react-table';
-import { Undo2 } from 'lucide-react';
+import { EyeIcon, Undo2 } from 'lucide-react';
 import { type ComponentProps, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/common/hooks';
 import type { SuccessResponse } from '@/common/types';
 import {
-  type ServiceCategories,
-  serviceCategoriesSearchParamsSchema,
-} from '@/common/types/api/service-categories';
+  type ServiceCategory,
+  serviceCategorySearchParamsSchema,
+} from '@/common/types/api/service-category';
 import { Role } from '@/common/types/api/user';
 import {
   AlertDialog,
@@ -23,18 +23,20 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTableHeader, ServiceCategoriesDataTable } from '@/components/ui/data-table';
-import { serviceCategoriesHttpClient } from '@/lib/http';
+import { DataTableHeader, ServiceCategoryDataTable } from '@/components/ui/data-table';
+import { serviceCategoryHttpClient } from '@/lib/http';
 
 const route = getRouteApi('/_non-auth-layout/service-categories/deleted/');
 
 export function ManageDeletedServiceCategoriesPage() {
   const { user } = useAuth();
-  const searchParams = serviceCategoriesSearchParamsSchema.parse(route.useSearch());
+  const navigate = useNavigate();
+
+  const searchParams = serviceCategorySearchParamsSchema.parse(route.useSearch());
 
   const { data: res, isLoading } = useQuery({
     queryKey: ['deleted-service-categories', 'all', searchParams],
-    queryFn: () => serviceCategoriesHttpClient.getAllDeletedServiceCategories(searchParams),
+    queryFn: () => serviceCategoryHttpClient.getAllDeletedServiceCategories(searchParams),
   });
 
   const [selectedCategories, setSelectedCategories] = useState<RowSelectionState>({});
@@ -45,16 +47,20 @@ export function ManageDeletedServiceCategoriesPage() {
       document.title = 'Deleted Service Categories | Internet Cafe Management';
     }
   }, [user]);
+
   return (
     <div className="flex flex-col gap-4">
-      {Object.keys(selectedCategories).length > 0 && (
-        <div className="flex justify-end">
-          <Button onClick={() => setIsRestoreDialogOpen(true)}>
-            <Undo2 className="size-4" /> Restore
+      <div className="flex items-center justify-end gap-4">
+        {Object.keys(selectedCategories).length > 0 && (
+          <Button variant="danger" onClick={() => setIsRestoreDialogOpen(true)}>
+            <Undo2 className="size-4" /> Delete selected
           </Button>
-        </div>
-      )}
-      <ServiceCategoriesDataTable
+        )}
+        <Button variant="outline" onClick={() => navigate({ to: '/service-categories' })}>
+          <EyeIcon className="size-4" /> View non-deleted categories
+        </Button>
+      </div>
+      <ServiceCategoryDataTable
         loading={isLoading}
         data={res?.data ?? []}
         pagination={res?.meta.pagination}
@@ -124,14 +130,14 @@ function ServiceCategoryRestoreDialog({
   onRestore,
   ...props
 }: ServiceCategoryRestoreDialogProps) {
-  const searchParams = serviceCategoriesSearchParamsSchema.parse(route.useSearch());
+  const searchParams = serviceCategorySearchParamsSchema.parse(route.useSearch());
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const { mutateAsync: triggerRestoreCategories, isPending } = useMutation({
     mutationFn: async (categoryIds: string[]) => {
       const result = await Promise.allSettled(
-        categoryIds.map((id) => serviceCategoriesHttpClient.restoreServiceCategories(id)),
+        categoryIds.map((id) => serviceCategoryHttpClient.restoreServiceCategory(id)),
       );
       return Object.groupBy(result, (r) => r.status);
     },
@@ -139,7 +145,7 @@ function ServiceCategoryRestoreDialog({
       await queryClient.invalidateQueries({
         queryKey: ['deleted-service-categories', 'all'],
       });
-      const res = queryClient.getQueryData<SuccessResponse<ServiceCategories[]>>([
+      const res = queryClient.getQueryData<SuccessResponse<ServiceCategory[]>>([
         'deleted-service-categories',
         'all',
         searchParams,

@@ -10,7 +10,7 @@ import { HttpClient } from './core.http';
 
 class PeripheralHttpClient extends HttpClient {
   constructor() {
-    super(URL.parse('/peripherals', envVariables.API_ENDPOINT)!.href);
+    super(`${envVariables.API_ENDPOINT}/peripherals`);
   }
 
   getAllPeripheral() {

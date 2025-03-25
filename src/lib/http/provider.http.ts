@@ -10,7 +10,7 @@ import { HttpClient } from './core.http';
 
 class ProviderHttpClient extends HttpClient {
   constructor() {
-    super(URL.parse('/providers', envVariables.API_ENDPOINT)!.href);
+    super(`${envVariables.API_ENDPOINT}/providers`);
   }
 
   getAllProvider() {

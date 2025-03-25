@@ -2,6 +2,7 @@ import type { SuccessResponse } from '@/common/types';
 import type {
   CreateServiceCategorySchema,
   ServiceCategory,
+  ServiceCategorySearchParams,
   UpdateServiceCategorySchema,
 } from '@/common/types/api/service-category';
 import { envVariables } from '@/common/utils';
@@ -10,18 +11,20 @@ import { HttpClient } from './core.http';
 
 class ServiceCategoryHttpClient extends HttpClient {
   constructor() {
-    super(URL.parse('/service-categories', envVariables.API_ENDPOINT)!.href);
+    super(`${envVariables.API_ENDPOINT}/service-categories`);
   }
 
-  getAllServiceCategory() {
+  getAllServiceCategories(params?: ServiceCategorySearchParams) {
     return this.get<SuccessResponse<ServiceCategory[]>>('/', {
       isPrivateRoute: true,
+      params,
     });
   }
 
-  getAllDeletedServiceCategory() {
+  getAllDeletedServiceCategories(params?: ServiceCategorySearchParams) {
     return this.get<SuccessResponse<ServiceCategory[]>>('/deleted', {
       isPrivateRoute: true,
+      params,
     });
   }
 

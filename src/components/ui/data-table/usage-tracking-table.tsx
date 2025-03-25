@@ -4,6 +4,10 @@ import type { ComponentProps } from 'react';
 import type { UsageTracking } from '@/common/types/api/usage-tracking';
 import type { Computer } from '@/common/types/api/usage-tracking/computer.type';
 import type { User } from '@/common/types/api/user';
+import {
+  getComputerAsyncSelectOptions,
+  getUserAsyncSelectOptions,
+} from '@/components/ui/async-select';
 
 import { DataTable, DataTableHeader, type FilterRule } from './data-table';
 
@@ -15,8 +19,13 @@ interface UsageTrackingDataTableProps
 }
 
 const filterRules: FilterRule<UsageTracking>[] = [
-  { field: 'user', type: 'text' },
-  { field: 'computer', type: 'text' },
+  {
+    field: 'user',
+    type: 'select',
+    async: true,
+    ...getUserAsyncSelectOptions('firstName'),
+  },
+  { field: 'computer', type: 'select', async: true, ...getComputerAsyncSelectOptions('name') },
   { field: 'startTimeStamp', type: 'datetime' },
   { field: 'endTimeStamp', type: 'datetime' },
   { field: 'createTimestamp', type: 'datetime' },

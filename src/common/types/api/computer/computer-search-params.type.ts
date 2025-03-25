@@ -11,7 +11,7 @@ export const computerSearchParamsSchema = commonSearchParamsSchema.extend({
     'status',
     'createTimestamp',
     'deleteTimestamp',
-  ]),
+  ]).optional(),
   name: z.string().optional(),
   position: z.string().optional(),
   status: z
@@ -25,4 +25,4 @@ export const computerSearchParamsSchema = commonSearchParamsSchema.extend({
   toPricePerHour: z.number().optional(),
 });
 
-export type ServiceSearchParams = z.infer<typeof computerSearchParamsSchema>;
+export type ComputerSearchParams = z.infer<typeof computerSearchParamsSchema>;

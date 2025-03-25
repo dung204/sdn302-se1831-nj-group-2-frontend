@@ -6,7 +6,7 @@ import { HttpClient } from './core.http';
 
 class BranchHttpClient extends HttpClient {
   constructor() {
-    super(URL.parse('/branches', envVariables.API_ENDPOINT)!.href);
+    super(`${envVariables.API_ENDPOINT}/branches`);
   }
 
   getAllBranch() {

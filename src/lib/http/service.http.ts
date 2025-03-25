@@ -6,7 +6,7 @@ import { HttpClient } from './core.http';
 
 class ServiceHttpClient extends HttpClient {
   constructor() {
-    super(URL.parse('/services', envVariables.API_ENDPOINT)!.href);
+    super(`${envVariables.API_ENDPOINT}/services`);
   }
 
   getAllService() {

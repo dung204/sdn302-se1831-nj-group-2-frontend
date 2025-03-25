@@ -27,6 +27,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  AsyncSelect,
+  getComputerAsyncSelectOptions,
+  getUserAsyncSelectOptions,
+} from '@/components/ui/async-select';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { UsageTrackingDataTable } from '@/components/ui/data-table';
@@ -194,18 +199,18 @@ export function ManageUsageTrackingPage() {
       </div>
 
       {/*  */}
-      <UserDeleteDialog
+      <UsageTrackingDeleteDialog
         userIds={Object.keys(usageTrackingToDelete)}
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         onDelete={() => setUsageTrackingToDelete({})}
       />
-      <UsageUpdateDialog
+      <UsageTrackingUpdateDialog
         usageTracking={usageTrackingToUpdate!}
         open={isUpdateDialogOpen}
         onOpenChange={setIsUpdateDialogOpen}
       />
-      <UsageCreateDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
+      <UsageTrackingCreateDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
     </>
   );
 }
@@ -215,7 +220,11 @@ interface UsageTrackingDeleteDialogProps extends ComponentProps<typeof AlertDial
   onDelete?: (deletedUserIds: string[]) => void;
 }
 
-function UserDeleteDialog({ userIds, onDelete, ...props }: UsageTrackingDeleteDialogProps) {
+function UsageTrackingDeleteDialog({
+  userIds,
+  onDelete,
+  ...props
+}: UsageTrackingDeleteDialogProps) {
   const searchParams = usageTrackingSearchParamsSchema.parse(route.useSearch());
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -273,11 +282,15 @@ function UserDeleteDialog({ userIds, onDelete, ...props }: UsageTrackingDeleteDi
   );
 }
 
-interface UsageUpdateDialogProps extends ComponentProps<typeof Dialog> {
+interface UsageTrackingUpdateDialogProps extends ComponentProps<typeof Dialog> {
   usageTracking: UsageTracking | null;
 }
 
-function UsageUpdateDialog({ usageTracking, onOpenChange, ...props }: UsageUpdateDialogProps) {
+function UsageTrackingUpdateDialog({
+  usageTracking,
+  onOpenChange,
+  ...props
+}: UsageTrackingUpdateDialogProps) {
   const form = useForm<UpdateUsageTrackingSchema>({
     resolver: zodResolver(updateUsageTrackingSchema),
     values: {
@@ -295,7 +308,7 @@ function UsageUpdateDialog({ usageTracking, onOpenChange, ...props }: UsageUpdat
 
   const { data: computers } = useQuery({
     queryKey: ['computers', 'all'],
-    queryFn: () => computerHttpClient.getAllComputer(),
+    queryFn: () => computerHttpClient.getAllComputers(),
   });
 
   const queryClient = useQueryClient();
@@ -418,7 +431,7 @@ function UsageUpdateDialog({ usageTracking, onOpenChange, ...props }: UsageUpdat
   );
 }
 
-function UsageCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dialog>) {
+function UsageTrackingCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dialog>) {
   const form = useForm<CreateUsageTrackingSchema>({
     resolver: zodResolver(createUsageTrackingSchema),
     values: {
@@ -427,16 +440,6 @@ function UsageCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dia
       startTimeStamp: '',
       endTimeStamp: '',
     },
-  });
-
-  const { data: users } = useQuery({
-    queryKey: ['users', 'all'],
-    queryFn: () => userHttpClient.getAllUsers(),
-  });
-
-  const { data: computers } = useQuery({
-    queryKey: ['computers', 'all'],
-    queryFn: () => computerHttpClient.getAllComputer(),
   });
 
   const queryClient = useQueryClient();
@@ -475,21 +478,12 @@ function UsageCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dia
               name="user"
               render={({ field }) => (
                 <FormItem className="col-span-2">
-                  <FormLabel>User</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Object.values(users?.data ?? []).map((user) => (
-                        <SelectItem key={user?.id} value={user?.id}>
-                          {user?.firstName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel required>User</FormLabel>
+                  <AsyncSelect
+                    value={field.name}
+                    onChange={field.onChange}
+                    {...getUserAsyncSelectOptions('firstName')}
+                  />
                   <FormMessage />
                 </FormItem>
               )}
@@ -498,21 +492,12 @@ function UsageCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dia
               name="computer"
               render={({ field }) => (
                 <FormItem className="col-span-2">
-                  <FormLabel>Computer</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Object.values(computers?.data ?? []).map((computer) => (
-                        <SelectItem key={computer?.id} value={computer?.id}>
-                          {computer?.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel required>Computer</FormLabel>
+                  <AsyncSelect
+                    value={field.name}
+                    onChange={field.onChange}
+                    {...getComputerAsyncSelectOptions('name')}
+                  />
                   <FormMessage />
                 </FormItem>
               )}

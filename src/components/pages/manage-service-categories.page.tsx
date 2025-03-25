@@ -10,13 +10,13 @@ import { toast } from 'sonner';
 import { useAuth } from '@/common/hooks';
 import type { SuccessResponse } from '@/common/types';
 import {
-  type CreateServiceCategorieSchema,
-  type ServiceCategories,
-  type UpdateServiceCategoriesSchema,
-  createServiceCategoriesSchema,
-  serviceCategoriesSearchParamsSchema,
-  updateServiceCategoriesSchema,
-} from '@/common/types/api/service-categories';
+  type CreateServiceCategorySchema,
+  type ServiceCategory,
+  type UpdateServiceCategorySchema,
+  createServiceCategorySchema,
+  serviceCategorySearchParamsSchema,
+  updateServiceCategorySchema,
+} from '@/common/types/api/service-category';
 import { Role } from '@/common/types/api/user';
 import {
   AlertDialog,
@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ServiceCategoriesDataTable } from '@/components/ui/data-table';
+import { ServiceCategoryDataTable } from '@/components/ui/data-table';
 import {
   Dialog,
   DialogContent,
@@ -52,22 +52,22 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { serviceCategoriesHttpClient } from '@/lib/http';
+import { serviceCategoryHttpClient } from '@/lib/http';
 
 const route = getRouteApi('/_non-auth-layout/service-categories/');
 
 export function ManageServiceCategoriesPage() {
-  const searchParams = serviceCategoriesSearchParamsSchema.parse(route.useSearch());
+  const searchParams = serviceCategorySearchParamsSchema.parse(route.useSearch());
   const { user } = useAuth();
   const navigate = useNavigate();
   const { data: res, isLoading } = useQuery({
     queryKey: ['serviceCategories', 'all', searchParams],
-    queryFn: async () => serviceCategoriesHttpClient.getAllServiceCategories(searchParams),
+    queryFn: async () => serviceCategoryHttpClient.getAllServiceCategories(searchParams),
   });
 
   const [categoriesToDelete, setCategoriesToDelete] = useState<RowSelectionState>({});
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [categoryToUpdate, setCategoryToUpdate] = useState<ServiceCategories | null>(null);
+  const [categoryToUpdate, setCategoryToUpdate] = useState<ServiceCategory | null>(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
@@ -89,10 +89,10 @@ export function ManageServiceCategoriesPage() {
           <Plus className="size-4" /> Add new category
         </Button>
         <Button variant="outline" onClick={() => navigate({ to: '/service-categories/deleted' })}>
-          <EyeIcon className="size-4" /> View deleted computers
+          <EyeIcon className="size-4" /> View deleted categories
         </Button>
       </div>
-      <ServiceCategoriesDataTable
+      <ServiceCategoryDataTable
         loading={isLoading}
         data={res?.data ?? []}
         pagination={res?.meta.pagination}
@@ -193,20 +193,20 @@ function ServiceCategoryDeleteDialog({
   onDelete,
   ...props
 }: ServiceCategoryDeleteDialogProps) {
-  const searchParams = serviceCategoriesSearchParamsSchema.parse(route.useSearch());
+  const searchParams = serviceCategorySearchParamsSchema.parse(route.useSearch());
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const { mutateAsync: triggerDeleteCategories, isPending } = useMutation({
     mutationFn: async (categoryIds: string[]) => {
       const result = await Promise.allSettled(
-        categoryIds.map((id) => serviceCategoriesHttpClient.softDeleteServiceCategories(id)),
+        categoryIds.map((id) => serviceCategoryHttpClient.softDeleteServiceCategory(id)),
       );
       return Object.groupBy(result, (r) => r.status);
     },
     onSuccess: async ({ fulfilled, rejected }) => {
       await queryClient.invalidateQueries({ queryKey: ['serviceCategories', 'all'] });
-      const res = queryClient.getQueryData<SuccessResponse<ServiceCategories[]>>([
+      const res = queryClient.getQueryData<SuccessResponse<ServiceCategory[]>>([
         'serviceCategories',
         'all',
         searchParams,
@@ -251,7 +251,7 @@ function ServiceCategoryDeleteDialog({
 }
 
 interface ServiceCategoryUpdateDialogProps extends ComponentProps<typeof Dialog> {
-  category: ServiceCategories | null;
+  category: ServiceCategory | null;
 }
 
 function ServiceCategoryUpdateDialog({
@@ -259,8 +259,8 @@ function ServiceCategoryUpdateDialog({
   onOpenChange,
   ...props
 }: ServiceCategoryUpdateDialogProps) {
-  const form = useForm<UpdateServiceCategoriesSchema>({
-    resolver: zodResolver(updateServiceCategoriesSchema),
+  const form = useForm<UpdateServiceCategorySchema>({
+    resolver: zodResolver(updateServiceCategorySchema),
     values: {
       name: !category ? '' : category.name,
       description: !category ? '' : category.description,
@@ -269,7 +269,7 @@ function ServiceCategoryUpdateDialog({
 
   const queryClient = useQueryClient();
   const { mutateAsync: triggerUpdateCategory } = useMutation({
-    mutationFn: serviceCategoriesHttpClient.updateServiceCategories(category?.id ?? ''),
+    mutationFn: serviceCategoryHttpClient.updateServiceCategory(category?.id ?? ''),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['serviceCategories', 'all'] });
       toast.success('Service category updated successfully!');
@@ -277,7 +277,7 @@ function ServiceCategoryUpdateDialog({
     },
   });
 
-  const handleSubmit = async (payload: UpdateServiceCategoriesSchema) => {
+  const handleSubmit = async (payload: UpdateServiceCategorySchema) => {
     await triggerUpdateCategory(payload);
   };
 
@@ -331,8 +331,8 @@ function ServiceCategoryUpdateDialog({
 }
 
 function ServiceCategoryCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dialog>) {
-  const form = useForm<CreateServiceCategorieSchema>({
-    resolver: zodResolver(createServiceCategoriesSchema),
+  const form = useForm<CreateServiceCategorySchema>({
+    resolver: zodResolver(createServiceCategorySchema),
     values: {
       name: '',
       description: '',
@@ -341,8 +341,8 @@ function ServiceCategoryCreateDialog({ onOpenChange, ...props }: ComponentProps<
 
   const queryClient = useQueryClient();
   const { mutateAsync: triggerCreateCategory } = useMutation({
-    mutationFn: (payload: CreateServiceCategorieSchema) =>
-      serviceCategoriesHttpClient.createNewServiceCategories(payload),
+    mutationFn: (payload: CreateServiceCategorySchema) =>
+      serviceCategoryHttpClient.createNewServiceCategory(payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['serviceCategories', 'all'] });
       toast.success('Service category created successfully!');
@@ -350,7 +350,7 @@ function ServiceCategoryCreateDialog({ onOpenChange, ...props }: ComponentProps<
     },
   });
 
-  const handleSubmit = async (values: CreateServiceCategorieSchema) => {
+  const handleSubmit = async (values: CreateServiceCategorySchema) => {
     await triggerCreateCategory(values);
   };
 

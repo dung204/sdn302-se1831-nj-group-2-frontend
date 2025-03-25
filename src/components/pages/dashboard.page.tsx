@@ -215,25 +215,6 @@ export function DashboardPage() {
           </ChartContainer>
         </CardContent>
       </Card>
-      {/* <AsyncSelect<User>
-        queryKey={(searchTerm) =>
-          !searchTerm ? ['users', 'all'] : ['users', 'all', { firstName: searchTerm }]
-        }
-        queryFn={async (searchTerm) => {
-          const res = await userHttpClient.getAllUsers({ firstName: searchTerm });
-          return res.data;
-        }}
-        renderOption={(user) => (
-          <div>
-            {user.firstName} {user.lastName}
-          </div>
-        )}
-        getOptionValue={(user) => user.id}
-        getDisplayValue={(user) => `${user.firstName} ${user.lastName}`}
-        label="Select"
-        value={selectedUserId}
-        onChange={setSelectedUserId}
-      /> */}
     </>
   );
 }

@@ -3,6 +3,7 @@ import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useDebounce } from '@/common/hooks';
+import type { SuccessResponse } from '@/common/types';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -27,7 +28,7 @@ export interface AsyncSelectProps<T> {
   /** Query key for Tanstack Query, the search term is appended to this key */
   queryKey: (searchTerm: string) => unknown[];
   /** Async function to fetch options */
-  queryFn: (query?: string) => Promise<T[]>;
+  queryFn: (query?: string) => Promise<SuccessResponse<T[]>>;
   /** Function to render each option */
   renderOption: (option: T) => React.ReactNode;
   /** Function to get the value from an option */
@@ -39,7 +40,7 @@ export interface AsyncSelectProps<T> {
   /** Custom loading skeleton */
   loadingSkeleton?: React.ReactNode;
   /** Currently selected value */
-  value: string;
+  value?: string;
   /** Callback when selection changes */
   onChange: (value: string) => void;
   /** Label for the select field */
@@ -86,7 +87,7 @@ export function AsyncSelect<T>({
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const { data, isLoading: isLoadingQuery } = useQuery({
+  const { data: res, isLoading: isLoadingQuery } = useQuery({
     queryKey: queryKey(debouncedSearchTerm),
     queryFn: () => queryFn(debouncedSearchTerm),
     enabled: open,
@@ -110,9 +111,9 @@ export function AsyncSelect<T>({
   useEffect(() => {
     if (!isLoadingQuery) {
       setLoading(false);
-      setOptions(data || []);
+      setOptions(res?.data || []);
     }
-  }, [data, isLoadingQuery]);
+  }, [res, isLoadingQuery]);
 
   const handleSelect = useCallback(
     (currentValue: string) => {

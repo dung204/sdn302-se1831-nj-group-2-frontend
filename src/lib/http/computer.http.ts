@@ -1,6 +1,7 @@
 import type { SuccessResponse } from '@/common/types';
 import type {
   Computer,
+  ComputerSearchParams,
   CreateComputerSchema,
   UpdateComputerSchema,
 } from '@/common/types/api/computer';
@@ -10,19 +11,20 @@ import { HttpClient } from './core.http';
 
 class ComputerHttpClient extends HttpClient {
   constructor() {
-    // super(URL.parse('/computers', envVariables.API_ENDPOINT)!.href);
     super(`${envVariables.API_ENDPOINT}/computers`);
   }
 
-  getAllComputer() {
+  getAllComputers(params?: ComputerSearchParams) {
     return this.get<SuccessResponse<Computer[]>>('/', {
       isPrivateRoute: true,
+      params,
     });
   }
 
-  getAllDeletedComputer() {
+  getAllDeletedComputer(params?: ComputerSearchParams) {
     return this.get<SuccessResponse<Computer[]>>('/deleted', {
       isPrivateRoute: true,
+      params,
     });
   }
 

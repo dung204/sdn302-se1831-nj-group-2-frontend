@@ -1,13 +1,14 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import type { ComponentProps } from 'react';
 
-import type { ServiceCategories } from '@/common/types/api/service-categories';
+import type { ServiceCategory } from '@/common/types/api/service-category';
 import { DataTable, DataTableHeader, type FilterRule } from '@/components/ui/data-table';
 
-const serviceCategoriesDataTableColumns = [
+const serviceCategoryDataTableColumns = [
   {
-    accessorKey: 'id',
-    header: ({ column }) => <DataTableHeader column={column} title="ID" />,
+    id: '#',
+    header: '#',
+    cell: ({ row }) => row.index + 1,
   },
   {
     accessorKey: 'name',
@@ -23,7 +24,7 @@ const serviceCategoriesDataTableColumns = [
     cell: ({ row }) => {
       const date = new Date(row.getValue<string>('createTimestamp'));
       const formattedDate = new Intl.DateTimeFormat('en-US', {
-        dateStyle: 'medium',
+        dateStyle: 'long',
         timeStyle: 'long',
       }).format(date);
 
@@ -31,19 +32,18 @@ const serviceCategoriesDataTableColumns = [
     },
   },
   // Add more columns as needed...
-] as const satisfies ColumnDef<ServiceCategories>[];
-const filterRules: FilterRule<ServiceCategories>[] = [
+] as const satisfies ColumnDef<ServiceCategory>[];
+const filterRules: FilterRule<ServiceCategory>[] = [
   { field: 'name', type: 'text' },
-  { field: 'fromCreateTimestamp', type: 'datetime' },
-  { field: 'toCreateTimestamp', type: 'datetime' },
+  { field: 'createTimestamp', type: 'datetime', range: true },
 ];
 interface ServiceCategoriesDataTableProps
-  extends Omit<ComponentProps<typeof DataTable<ServiceCategories>>, 'columns' | 'getRowId'> {
+  extends Omit<ComponentProps<typeof DataTable<ServiceCategory>>, 'columns' | 'getRowId'> {
   renderColumns?: (
-    existingColumns: typeof serviceCategoriesDataTableColumns,
-  ) => ColumnDef<ServiceCategories>[];
+    existingColumns: typeof serviceCategoryDataTableColumns,
+  ) => ColumnDef<ServiceCategory>[];
 }
-export function ServiceCategoriesDataTable({
+export function ServiceCategoryDataTable({
   renderColumns,
   filter,
   ...props
@@ -53,8 +53,8 @@ export function ServiceCategoriesDataTable({
       getRowId={(row) => row.id}
       columns={
         !renderColumns
-          ? serviceCategoriesDataTableColumns
-          : renderColumns(serviceCategoriesDataTableColumns)
+          ? serviceCategoryDataTableColumns
+          : renderColumns(serviceCategoryDataTableColumns)
       }
       filterRules={filterRules}
       filter={filter}

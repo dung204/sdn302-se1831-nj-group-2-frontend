@@ -10,7 +10,7 @@ import { HttpClient } from './core.http';
 
 class PositionHttpClient extends HttpClient {
   constructor() {
-    super(URL.parse('/positions', envVariables.API_ENDPOINT)!.href);
+    super(`${envVariables.API_ENDPOINT}/positions`);
   }
 
   getAllPosition() {

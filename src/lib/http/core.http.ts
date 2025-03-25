@@ -92,6 +92,7 @@ export class HttpClient {
         localStorageService.remove(LocalStorageKey.REFRESH_TOKEN);
         window.location.replace('/login');
       }
+      return Promise.reject(error);
     }
 
     const failedResponse = error.response?.data as FailedResponse;
