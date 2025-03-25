@@ -53,7 +53,7 @@ export function ManageDeletedServiceCategoriesPage() {
       <div className="flex items-center justify-end gap-4">
         {Object.keys(selectedCategories).length > 0 && (
           <Button variant="danger" onClick={() => setIsRestoreDialogOpen(true)}>
-            <Undo2 className="size-4" /> Delete selected
+            <Undo2 className="size-4" /> Restore selected
           </Button>
         )}
         <Button variant="outline" onClick={() => navigate({ to: '/service-categories' })}>

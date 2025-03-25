@@ -346,6 +346,10 @@ function FilterDialog<TData>({
         <div className="grid grid-cols-12 items-center gap-4">
           {filterRules.map((rule) => {
             const headerTitle = headerTitles.find((header) => header.field === rule.field)?.title;
+            if (!headerTitle) {
+              return <></>;
+            }
+
             let FilterComp: JSX.Element;
             const fieldId = `${id}-${rule.field as string}`;
             const field = rule.field as string;
