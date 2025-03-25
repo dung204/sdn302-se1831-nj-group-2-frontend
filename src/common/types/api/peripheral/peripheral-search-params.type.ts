@@ -18,7 +18,7 @@ export const peripheralSearchParamsSchema = commonSearchParamsSchema.extend({
     'provider',
     'createTimestamp',
     'deleteTimestamp',
-  ]),
+  ]).optional(),
 });
 
 export type PeripheralSearchParams = z.infer<typeof peripheralSearchParamsSchema>;
