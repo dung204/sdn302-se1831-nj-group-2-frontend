@@ -11,7 +11,7 @@ export const positionSearchParamsSchema = commonSearchParamsSchema.extend({
     'status',
     'createTimestamp',
     'deleteTimestamp',
-  ]),
+  ]).optional(),
   name: z.string().optional(),
   status: z
     .union([

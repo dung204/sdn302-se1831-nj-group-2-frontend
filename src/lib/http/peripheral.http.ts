@@ -2,6 +2,7 @@ import type { SuccessResponse } from '@/common/types';
 import type {
   CreatePeripheralSchema,
   Peripheral,
+  PeripheralSearchParams,
   UpdatePeripheralSchema,
 } from '@/common/types/api/peripheral';
 import { envVariables } from '@/common/utils';
@@ -13,15 +14,17 @@ class PeripheralHttpClient extends HttpClient {
     super(`${envVariables.API_ENDPOINT}/peripherals`);
   }
 
-  getAllPeripheral() {
+  getAllPeripherals(params?: PeripheralSearchParams) {
     return this.get<SuccessResponse<Peripheral[]>>('/', {
       isPrivateRoute: true,
+      params,
     });
   }
 
-  getAllDeletedPeripheral() {
+  getAllDeletedPeripherals(params?: PeripheralSearchParams) {
     return this.get<SuccessResponse<Peripheral[]>>('/deleted', {
       isPrivateRoute: true,
+      params,
     });
   }
 

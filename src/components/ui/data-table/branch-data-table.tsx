@@ -7,8 +7,9 @@ import { DataTable, DataTableHeader, type FilterRule } from './data-table';
 
 const branchDataTableColumns = [
   {
-    accessorKey: 'id',
-    header: ({ column }) => <DataTableHeader column={column} title="ID" />,
+    id: '#',
+    header: '#',
+    cell: ({ row }) => row.index + 1,
   },
   {
     accessorKey: 'name',

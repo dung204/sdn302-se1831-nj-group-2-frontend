@@ -528,7 +528,10 @@ function FilterDialog<TData>({
                           const { [fromField]: _, ...rest } = newFilterState;
                           newFilterState = { ...rest };
                         } else {
-                          newFilterState = { ...newFilterState, [fromField]: from.toString() };
+                          newFilterState = {
+                            ...newFilterState,
+                            [fromField]: from as unknown as string,
+                          };
                         }
 
                         if (to !== 0 && !to) {
@@ -536,7 +539,7 @@ function FilterDialog<TData>({
                           const { [toField]: _, ...rest } = newFilterState;
                           newFilterState = { ...rest };
                         } else {
-                          newFilterState = { ...filterState, [toField]: to.toString() };
+                          newFilterState = { ...filterState, [toField]: to as unknown as string };
                         }
 
                         setFilterState(newFilterState);
@@ -564,7 +567,10 @@ function FilterDialog<TData>({
                           const { [fromField]: _, ...rest } = newFilterState;
                           newFilterState = { ...rest };
                         } else {
-                          newFilterState = { ...newFilterState, [fromField]: from.toString() };
+                          newFilterState = {
+                            ...newFilterState,
+                            [fromField]: from as unknown as string,
+                          };
                         }
 
                         if (to !== 0 && !to) {
@@ -572,7 +578,7 @@ function FilterDialog<TData>({
                           const { [toField]: _, ...rest } = newFilterState;
                           newFilterState = { ...rest };
                         } else {
-                          newFilterState = { ...filterState, [toField]: to.toString() };
+                          newFilterState = { ...filterState, [toField]: to as unknown as string };
                         }
 
                         setFilterState(newFilterState);
@@ -596,7 +602,7 @@ function FilterDialog<TData>({
 
                         setFilterState((state) => ({
                           ...state,
-                          [rule.field as string]: value.toString(),
+                          [rule.field as string]: value as unknown as string,
                         }));
                       }}
                     />
@@ -617,7 +623,7 @@ function FilterDialog<TData>({
 
                       setFilterState((state) => ({
                         ...state,
-                        [rule.field as string]: value.toString(),
+                        [rule.field as string]: value as unknown as string,
                       }));
                     }}
                   />

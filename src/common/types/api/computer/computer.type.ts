@@ -12,5 +12,10 @@ export interface Computer extends BaseModel {
   ram: string;
   storage: string;
   provider: Provider;
-  peripherals: Peripheral[];
+  peripherals: [
+    Peripheral & {
+      status: string;
+    },
+  ];
+  createTimestamp: string;
 }

@@ -71,12 +71,14 @@ export function CurrencyInput({
           </>
         ) : (
           <>
-            {new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'VND',
-              maximumFractionDigits: 20,
-              maximumSignificantDigits: 20,
-            }).format(Number(textValue))}
+            <span className="text-sm">
+              {new Intl.NumberFormat(navigator.language, {
+                style: 'currency',
+                currency: 'USD',
+                maximumFractionDigits: 20,
+                maximumSignificantDigits: 20,
+              }).format(Number(textValue))}
+            </span>
             <Separator
               orientation="vertical"
               className={cn('bg-primary opacity-0', { 'animate-blink': isFocused })}
