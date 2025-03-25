@@ -21,8 +21,8 @@ export const computerSearchParamsSchema = commonSearchParamsSchema.extend({
     ])
     .optional(),
   provider: z.string().optional(),
-  fromPricePerHour: z.number().optional(),
-  toPricePerHour: z.number().optional(),
+  fromPricePerHour: z.string().optional(),
+  toPricePerHour: z.string().optional(),
 });
 
 export type ComputerSearchParams = z.infer<typeof computerSearchParamsSchema>;
