@@ -61,7 +61,7 @@ export function GuestHomePage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate({ to: `/branches/${branch.id}` })}
+                  onClick={() => navigate({ to: `/guests/branches/${branch.id}/computers` })}
                 >
                   <EyeIcon className="mr-2 size-4" />
                   View Branch

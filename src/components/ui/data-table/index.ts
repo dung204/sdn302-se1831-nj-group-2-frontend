@@ -4,3 +4,4 @@ export * from './service-category.table';
 export * from './usage-tracking-table';
 export * from './branch-data-table';
 export * from './peripheral-data-table';
+export * from './computer-data-table-guest';

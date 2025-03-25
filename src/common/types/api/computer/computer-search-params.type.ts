@@ -13,7 +13,7 @@ export const computerSearchParamsSchema = commonSearchParamsSchema.extend({
     'deleteTimestamp',
   ]).optional(),
   name: z.string().optional(),
-  position: z.string().optional(),
+  branch: z.string().optional(),
   status: z
     .union([
       z.nativeEnum(DeviceStatus).transform((value) => value.split(',')),
