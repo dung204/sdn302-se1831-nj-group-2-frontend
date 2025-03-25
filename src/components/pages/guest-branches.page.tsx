@@ -49,7 +49,8 @@ export function GuestHomePage() {
             enableSorting: false,
           },
           ...existingColumns.filter(
-            (col) => col.accessorKey === 'name' || col.accessorKey === 'address',
+            (col) =>
+              'accessorKey' in col && (col.accessorKey === 'name' || col.accessorKey === 'address'),
           ),
           {
             id: 'actions',
