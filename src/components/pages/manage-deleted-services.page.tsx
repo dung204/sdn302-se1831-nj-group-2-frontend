@@ -50,7 +50,7 @@ export function ManageDeletedServicesPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-end gap-4">
         {Object.keys(selectedServices).length > 0 && (
-          <Button variant="danger" onClick={() => setIsRestoreDialogOpen(true)}>
+          <Button onClick={() => setIsRestoreDialogOpen(true)}>
             <Undo2 className="size-4" /> Restore selected
           </Button>
         )}

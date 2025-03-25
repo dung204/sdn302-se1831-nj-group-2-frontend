@@ -2,6 +2,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { ComponentProps } from 'react';
 
 import type { Service } from '@/common/types/api/service';
+import { getServiceCategoryAsyncSelectOptions } from '@/components/ui/async-select/service-categories-select-options';
 // Assuming this is where Service is defined
 import { DataTable, DataTableHeader, type FilterRule } from '@/components/ui/data-table';
 
@@ -28,8 +29,12 @@ const serviceDataTableColumns = [
     },
   },
   {
-    accessorKey: 'category.name',
+    accessorKey: 'category',
     header: ({ column }) => <DataTableHeader column={column} title="Category" />,
+    cell: ({ row }) => {
+      const category = row.getValue<Service['category']>('category');
+      return <span>{category.name}</span>;
+    },
   },
   {
     accessorKey: 'createTimestamp',
@@ -38,7 +43,7 @@ const serviceDataTableColumns = [
       const date = new Date(row.getValue<string>('createTimestamp'));
       const formattedDate = new Intl.DateTimeFormat('en-US', {
         dateStyle: 'long',
-        timeStyle: 'long',
+        timeStyle: 'medium',
       }).format(date);
 
       return <span>{formattedDate}</span>;
@@ -49,8 +54,15 @@ const serviceDataTableColumns = [
 
 const filterRules: FilterRule<Service>[] = [
   { field: 'name', type: 'text' },
-  { field: 'price', type: 'number', range: true },
+  {
+    field: 'category',
+    type: 'select',
+    async: true,
+    ...getServiceCategoryAsyncSelectOptions('name'),
+  },
+  { field: 'price', type: 'number', range: true, currency: true },
   { field: 'createTimestamp', type: 'datetime', range: true },
+  { field: 'deleteTimestamp', type: 'datetime', range: true },
 ];
 
 interface ServiceDataTableProps

@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, getRouteApi, useNavigate } from '@tanstack/react-router';
 import { type RowSelectionState } from '@tanstack/react-table';
 import { Edit, Ellipsis, EyeIcon, Plus, Trash2 } from 'lucide-react';
-import { type ComponentProps, useState } from 'react';
+import { type ComponentProps, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -27,8 +27,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { AsyncSelect } from '@/components/ui/async-select';
+import { getServiceCategoryAsyncSelectOptions } from '@/components/ui/async-select/service-categories-select-options';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { ServiceDataTable } from '@/components/ui/data-table';
 import {
   Dialog,
@@ -52,13 +55,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { branchHttpClient, serviceCategoryHttpClient, serviceHttpClient } from '@/lib/http';
 
 const route = getRouteApi('/_non-auth-layout/services/');
@@ -279,8 +275,8 @@ function ServiceUpdateDialog({ service, onOpenChange, ...props }: ServiceUpdateD
       branches: defaultBranch,
     },
   });
-  const { data: categories, isLoading } = useQuery({
-    queryKey: ['serviceCategories', 'all'],
+  const { data: categories } = useQuery({
+    queryKey: ['service-categories', 'all'],
     queryFn: async () => serviceCategoryHttpClient.getAllServiceCategories(),
   });
   console.log('categories', categories);
@@ -336,30 +332,18 @@ function ServiceUpdateDialog({ service, onOpenChange, ...props }: ServiceUpdateD
             <FormField
               name="category"
               render={({ field }) => (
-                <FormItem className="col-span-1">
+                <FormItem className="col-span-2">
                   <FormLabel required>Category</FormLabel>
-                  <Select
-                    onValueChange={(value) => form.setValue('category', value)} // Only set the ID
+                  <AsyncSelect
                     value={field.value}
-                    disabled={isLoading}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={isLoading ? 'Loading...' : 'Select a category'} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categories?.data.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={field.onChange}
+                    {...getServiceCategoryAsyncSelectOptions('name')}
+                  />
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               name="description"
               render={({ field }) => (
@@ -375,14 +359,10 @@ function ServiceUpdateDialog({ service, onOpenChange, ...props }: ServiceUpdateD
             <FormField
               name="price"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="col-span-2">
                   <FormLabel required>Price</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                    />
+                    <CurrencyInput value={field.value} onChange={field.onChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -401,15 +381,13 @@ function ServiceUpdateDialog({ service, onOpenChange, ...props }: ServiceUpdateD
 function ServiceCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dialog>) {
   const { user } = useAuth(); // Access user here
 
-  // Helper function to safely get the default branch
-  const getDefaultBranch = (user: User | null): string[] => {
+  const defaultBranch = useMemo(() => {
     if (!user) return []; // Handle null case
     if ('branch' in user && (user.role === Role.BRANCH_ADMIN || user.role === Role.STAFF)) {
       return [user.branch.id]; // Default to user's branch
     }
     return []; // Empty for OWNER or GUEST
-  };
-  const defaultBranch = getDefaultBranch(user);
+  }, [user]);
 
   const form = useForm<CreateServiceSchema>({
     resolver: zodResolver(createServiceSchema),
@@ -443,17 +421,6 @@ function ServiceCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof D
     onOpenChange?.(open);
   };
 
-  const { data: categories, isLoading } = useQuery({
-    queryKey: ['serviceCategories', 'all'],
-    queryFn: async () => serviceCategoryHttpClient.getAllServiceCategories(),
-  });
-  console.log('categories', categories);
-
-  const { data: branches } = useQuery({
-    queryKey: ['branchs', 'all'],
-    queryFn: async () => branchHttpClient.getAllBranches(),
-  });
-  console.log(branches);
   return (
     <Dialog onOpenChange={handleOpenChange} {...props}>
       <DialogContent>
@@ -477,34 +444,13 @@ function ServiceCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof D
             <FormField
               name="category"
               render={({ field }) => (
-                <FormItem className="col-span-1">
+                <FormItem className="col-span-2">
                   <FormLabel required>Category</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      form.setValue('category', value); // Set only the id in the form
-                    }}
+                  <AsyncSelect
                     value={field.value}
-                    disabled={isLoading}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={isLoading ? 'Loading...' : 'Select category'} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categories?.data && categories?.data.length > 0 ? (
-                        categories?.data.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem disabled value="">
-                          No category available
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
+                    onChange={field.onChange}
+                    {...getServiceCategoryAsyncSelectOptions('name')}
+                  />
                   <FormMessage />
                 </FormItem>
               )}
@@ -525,14 +471,10 @@ function ServiceCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof D
             <FormField
               name="price"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="col-span-2">
                   <FormLabel required>Price</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                    />
+                    <CurrencyInput value={field.value} onChange={field.onChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
