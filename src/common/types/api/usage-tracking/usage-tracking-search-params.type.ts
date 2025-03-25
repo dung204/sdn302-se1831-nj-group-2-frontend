@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { commonSearchParamsSchema } from '@/common/types/common-search-params.type';
+import { commonSearchParamsSchema } from '@/common/types';
 import { SortingUtils } from '@/common/utils';
 
 export const usageTrackingSearchParamsSchema = commonSearchParamsSchema.extend({

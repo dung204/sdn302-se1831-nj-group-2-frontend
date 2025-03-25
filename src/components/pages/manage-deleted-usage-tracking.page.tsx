@@ -1,18 +1,36 @@
-import { Navigate } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
+import { Navigate, getRouteApi } from '@tanstack/react-router';
 
 import { useAuth } from '@/common/hooks';
+import { usageTrackingSearchParamsSchema } from '@/common/types/api/usage-tracking/usage-tracking-search-params.type';
 import { Role } from '@/common/types/api/user';
+import { UsageTrackingDataTable } from '@/components/ui/data-table';
+import { usageTrackingHttpClient } from '@/lib/http';
 
-export function ManageDeletedUsageTrackingPage() {
+const route = getRouteApi('/_non-auth-layout/usage-tracking/deleted/');
+
+export function ManageUsageTrackingDeletedPage() {
   const { user } = useAuth();
+  const searchParams = usageTrackingSearchParamsSchema.parse(route.useSearch());
+  const { data: res, isLoading } = useQuery({
+    queryKey: ['deleted-usage-tracking', 'all', searchParams],
+    queryFn: () => usageTrackingHttpClient.getAllDeletedUsageTrackings(searchParams),
+  });
 
-  if (!user) {
-    return <Navigate to="/login" />;
-  }
-
-  if (![Role.OWNER, Role.BRANCH_ADMIN].includes(user.role)) {
+  // incorrect role
+  if (user?.role === Role.GUEST) {
     return <Navigate to="/" />;
   }
 
-  return <div>Manage Deleted Usage Tracking Page</div>;
+  // correct role => return the page
+  return (
+    <>
+      <UsageTrackingDataTable
+        data={res?.data ?? []}
+        loading={isLoading}
+        pagination={res?.meta.pagination}
+        sorting={res?.meta.sorting}
+      />
+    </>
+  );
 }

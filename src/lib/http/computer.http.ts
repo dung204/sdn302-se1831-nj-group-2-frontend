@@ -1,27 +1,29 @@
-import type { CommonSearchParams, SuccessResponse } from '@/common/types';
+import type { SuccessResponse } from '@/common/types';
 import type {
   Computer,
+  ComputerSearchParams,
   CreateComputerSchema,
   UpdateComputerSchema,
 } from '@/common/types/api/computer';
+import { envVariables } from '@/common/utils';
 import { HttpClient } from '@/lib/http/core.http';
 
 class ComputerHttpClient extends HttpClient {
   constructor() {
-    super();
+    super(`${envVariables.API_ENDPOINT}/computers`);
   }
 
-  public getAllComputers(params?: CommonSearchParams) {
-    return this.get<SuccessResponse<Computer[]>>('/computers', {
-      params,
+  getAllComputers(params?: ComputerSearchParams) {
+    return this.get<SuccessResponse<Computer[]>>('/', {
       isPrivateRoute: true,
+      params,
     });
   }
 
-  public getAllDeletedComputers(params?: CommonSearchParams) {
-    return this.get<SuccessResponse<Computer[]>>('/computers/deleted', {
-      params,
+  getAllDeletedComputer(params?: ComputerSearchParams) {
+    return this.get<SuccessResponse<Computer[]>>('/deleted', {
       isPrivateRoute: true,
+      params,
     });
   }
 

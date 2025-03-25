@@ -1,7 +1,8 @@
-import type { CommonSearchParams, SuccessResponse } from '@/common/types';
+import type { SuccessResponse } from '@/common/types';
 import type {
   CreatePositionSchema,
   Position,
+  PositionSearchParams,
   UpdatePositionSchema,
 } from '@/common/types/api/position';
 import { envVariables } from '@/common/utils';
@@ -10,19 +11,20 @@ import { HttpClient } from './core.http';
 
 class PositionHttpClient extends HttpClient {
   constructor() {
-    super(URL.parse('/api/v1', envVariables.API_ENDPOINT)!.href);
+    super(`${envVariables.API_ENDPOINT}/positions`);
   }
 
-  public getAllPositions(params?: CommonSearchParams) {
-    return this.get<SuccessResponse<Position[]>>('/positions', {
-      params,
+  public getAllPositions(params?: PositionSearchParams) {
+    return this.get<SuccessResponse<Position[]>>('/', {
       isPrivateRoute: true,
+      params,
     });
   }
 
-  getAllDeletedPosition() {
+  getAllDeletedPositions(params?: PositionSearchParams) {
     return this.get<SuccessResponse<Position[]>>('/deleted', {
       isPrivateRoute: true,
+      params,
     });
   }
 

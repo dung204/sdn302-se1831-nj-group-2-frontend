@@ -1,7 +1,8 @@
-import type { CommonSearchParams, SuccessResponse } from '@/common/types';
+import type { SuccessResponse } from '@/common/types';
 import type {
   CreateProviderSchema,
   Provider,
+  ProviderSearchParams,
   UpdateProviderSchema,
 } from '@/common/types/api/provider';
 import { envVariables } from '@/common/utils';
@@ -10,19 +11,20 @@ import { HttpClient } from './core.http';
 
 class ProviderHttpClient extends HttpClient {
   constructor() {
-    super(URL.parse('/api/v1', envVariables.API_ENDPOINT)!.href);
+    super(`${envVariables.API_ENDPOINT}/providers`);
   }
 
-  public getAllProviders(params?: CommonSearchParams) {
-    return this.get<SuccessResponse<Provider[]>>('/providers', {
-      params,
+  getAllProviders(params?: ProviderSearchParams) {
+    return this.get<SuccessResponse<Provider[]>>('/', {
       isPrivateRoute: true,
+      params,
     });
   }
 
-  getAllDeletedProvider() {
+  getAllDeletedProviders(params?: ProviderSearchParams) {
     return this.get<SuccessResponse<Provider[]>>('/deleted', {
       isPrivateRoute: true,
+      params,
     });
   }
 

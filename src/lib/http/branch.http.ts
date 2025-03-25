@@ -1,23 +1,30 @@
 import type { SuccessResponse } from '@/common/types';
-import type { Branch, CreateBranchSchema, UpdateBranchSchema } from '@/common/types/api/branch';
+import type {
+  Branch,
+  BranchSearchParams,
+  CreateBranchSchema,
+  UpdateBranchSchema,
+} from '@/common/types/api/branch';
 import { envVariables } from '@/common/utils';
 
 import { HttpClient } from './core.http';
 
 class BranchHttpClient extends HttpClient {
   constructor() {
-    super(URL.parse('/branches', envVariables.API_ENDPOINT)!.href);
+    super(`${envVariables.API_ENDPOINT}/branches`);
   }
 
-  getAllBranch() {
+  getAllBranches(params?: BranchSearchParams) {
     return this.get<SuccessResponse<Branch[]>>('/', {
       isPrivateRoute: true,
+      params,
     });
   }
 
-  getAllDeletedBranch() {
+  getAllDeletedBranches(params?: BranchSearchParams) {
     return this.get<SuccessResponse<Branch[]>>('/deleted', {
       isPrivateRoute: true,
+      params,
     });
   }
 
