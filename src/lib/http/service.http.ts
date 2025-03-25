@@ -1,5 +1,10 @@
 import type { SuccessResponse } from '@/common/types';
-import type { CreateServiceSchema, Service, UpdateServiceSchema } from '@/common/types/api/service';
+import type {
+  CreateServiceSchema,
+  Service,
+  ServiceSearchParams,
+  UpdateServiceSchema,
+} from '@/common/types/api/service';
 import { envVariables } from '@/common/utils';
 
 import { HttpClient } from './core.http';
@@ -9,15 +14,17 @@ class ServiceHttpClient extends HttpClient {
     super(`${envVariables.API_ENDPOINT}/services`);
   }
 
-  getAllService() {
+  getAllService(params?: ServiceSearchParams) {
     return this.get<SuccessResponse<Service[]>>('/', {
       isPrivateRoute: true,
+      params,
     });
   }
 
-  getAllDeletedService() {
+  getAllDeletedService(params?: ServiceSearchParams) {
     return this.get<SuccessResponse<Service[]>>('/deleted', {
       isPrivateRoute: true,
+      params,
     });
   }
 
