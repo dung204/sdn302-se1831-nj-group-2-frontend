@@ -56,7 +56,7 @@ export function ManageDeletedGuestsPage() {
     return <Navigate to="/login" />;
   }
 
-  if (user!.role !== Role.BRANCH_ADMIN) {
+  if (user.role !== Role.BRANCH_ADMIN && user.role !== Role.STAFF) {
     return <Navigate to="/" />;
   }
 
@@ -173,7 +173,7 @@ function UserRestoreDialog({ userIds, onRestore, ...props }: UserRestoreDialogPr
       ]);
       if (res!.meta.pagination.page > res!.meta.pagination.totalPage) {
         navigate({
-          to: '/users/deleted',
+          to: '/guests/deleted',
           search: {
             ...searchParams,
             page: res!.meta.pagination.totalPage,

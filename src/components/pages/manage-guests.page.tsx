@@ -92,7 +92,7 @@ export function ManageGuestsPage() {
     return <Navigate to="/login" />;
   }
 
-  if (user.role !== Role.BRANCH_ADMIN) {
+  if (user.role !== Role.BRANCH_ADMIN && user.role !== Role.STAFF) {
     return <Navigate to="/" />;
   }
 
@@ -108,7 +108,7 @@ export function ManageGuestsPage() {
           <Plus className="size-4" /> Add new guest
         </Button>
         <Button variant="outline" onClick={() => navigate({ to: '/guests/deleted' })}>
-          <EyeIcon className="size-4" /> View deleted branches
+          <EyeIcon className="size-4" /> View deleted guests
         </Button>
       </div>
       <UserDataTable

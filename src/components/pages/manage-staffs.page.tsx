@@ -109,7 +109,7 @@ export function ManageStaffsPage() {
           <Plus className="size-4" /> Add new staff
         </Button>
         <Button variant="outline" onClick={() => navigate({ to: '/staffs/deleted' })}>
-          <EyeIcon className="size-4" /> View deleted branches
+          <EyeIcon className="size-4" /> View deleted staffs
         </Button>
       </div>
       <UserDataTable

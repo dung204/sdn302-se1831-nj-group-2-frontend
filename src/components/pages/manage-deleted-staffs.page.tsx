@@ -176,7 +176,7 @@ function UserRestoreDialog({ userIds, onRestore, ...props }: UserRestoreDialogPr
       ]);
       if (res!.meta.pagination.page > res!.meta.pagination.totalPage) {
         navigate({
-          to: '/users/deleted',
+          to: '/staffs/deleted',
           search: {
             ...searchParams,
             page: res!.meta.pagination.totalPage,
