@@ -24,7 +24,7 @@ export interface Option {
   icon?: React.ReactNode;
 }
 
-export interface AsyncSelectProps<T> {
+export type AsyncSelectProps<T> = {
   /** Query key for Tanstack Query, the search term is appended to this key */
   queryKey: (searchTerm: string) => unknown[];
   /** Async function to fetch options */
@@ -39,10 +39,6 @@ export interface AsyncSelectProps<T> {
   notFound?: React.ReactNode;
   /** Custom loading skeleton */
   loadingSkeleton?: React.ReactNode;
-  /** Currently selected value */
-  value?: string;
-  /** Callback when selection changes */
-  onChange: (value: string) => void;
   /** Label for the select field */
   label: string;
   /** Placeholder text when no selection */
@@ -57,7 +53,24 @@ export interface AsyncSelectProps<T> {
   noResultsMessage?: string;
   /** Allow clearing the selection */
   clearable?: boolean;
-}
+} & (
+  | {
+      /** Allow the select to select multiple values */
+      multiple?: false;
+      /** Currently selected value */
+      value?: string;
+      /** Callback when selection changes */
+      onChange: (value: string) => void;
+    }
+  | {
+      /** Allow the select to select multiple values */
+      multiple: true;
+      /** Currently selected values */
+      value?: string[];
+      /** Callback when selection changes */
+      onChange: (value: string[]) => void;
+    }
+);
 
 export function AsyncSelect<T>({
   queryKey,
@@ -69,28 +82,30 @@ export function AsyncSelect<T>({
   loadingSkeleton,
   label,
   placeholder = 'Select...',
-  value,
-  onChange,
   disabled = false,
   className,
   triggerClassName,
   noResultsMessage,
   clearable = true,
+  multiple,
+  value,
+  onChange,
 }: AsyncSelectProps<T>) {
-  const [_, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [options, setOptions] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, __] = useState<string | null>(null);
   const [selectedValue, setSelectedValue] = useState(value);
   const [selectedOption, setSelectedOption] = useState<T | null>(null);
+  const [selectedOptions, setSelectedOptions] = useState<T[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const { data: res, isLoading: isLoadingQuery } = useQuery({
     queryKey: queryKey(debouncedSearchTerm),
     queryFn: () => queryFn(debouncedSearchTerm),
-    enabled: open,
+    enabled: !mounted || (mounted && open),
   });
 
   useEffect(() => {
@@ -117,13 +132,33 @@ export function AsyncSelect<T>({
 
   const handleSelect = useCallback(
     (currentValue: string) => {
-      const newValue = clearable && currentValue === selectedValue ? '' : currentValue;
+      if (!multiple) {
+        const newValue = clearable && currentValue === selectedValue ? '' : currentValue;
+        setSelectedValue(newValue);
+        setSelectedOption(options.find((option) => getOptionValue(option) === newValue) || null);
+        onChange(newValue);
+        setOpen(false);
+        return;
+      }
+
+      const selectedValues = selectedValue as string[];
+      const newValue =
+        clearable && selectedValues.includes(currentValue)
+          ? selectedValues.filter((val) => val !== currentValue)
+          : [...selectedValues, currentValue];
       setSelectedValue(newValue);
-      setSelectedOption(options.find((option) => getOptionValue(option) === newValue) || null);
+
+      setSelectedOptions(
+        clearable && selectedOptions.some((opt) => getOptionValue(opt) === currentValue)
+          ? selectedOptions.filter((opt) => getOptionValue(opt) !== currentValue)
+          : [...selectedOptions, options.find((opt) => getOptionValue(opt) === currentValue)!],
+      );
+
       onChange(newValue);
       setOpen(false);
     },
-    [selectedValue, onChange, clearable, options, getOptionValue],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [multiple, selectedValue, onChange, clearable, options, getOptionValue],
   );
 
   return (
@@ -140,7 +175,35 @@ export function AsyncSelect<T>({
           )}
           disabled={disabled}
         >
-          {selectedOption ? getDisplayValue(selectedOption) : placeholder}
+          {(() => {
+            if (multiple) return <></>;
+
+            if (selectedOption) return getDisplayValue(selectedOption);
+
+            return placeholder;
+          })()}
+          {(() => {
+            if (!multiple) return <></>;
+            if (selectedOptions.length === 0) return placeholder;
+
+            if (selectedOptions.length === 1)
+              return <span>{getDisplayValue(selectedOptions[0])}</span>;
+
+            if (selectedOptions.length === 2)
+              return (
+                <span>
+                  {getDisplayValue(selectedOptions[0])}, {getDisplayValue(selectedOptions[1])}
+                </span>
+              );
+
+            if (selectedOptions.length > 2)
+              return (
+                <span>
+                  {getDisplayValue(selectedOptions[0])}, {getDisplayValue(selectedOptions[1])}, and{' '}
+                  {selectedOptions.length - 2} more...
+                </span>
+              );
+          })()}
           <ChevronsUpDown className="opacity-50" size={10} />
         </Button>
       </PopoverTrigger>
@@ -182,10 +245,12 @@ export function AsyncSelect<T>({
                   >
                     {renderOption(option)}
                     <Check
-                      className={cn(
-                        'ml-auto h-3 w-3',
-                        selectedValue === getOptionValue(option) ? 'opacity-100' : 'opacity-0',
-                      )}
+                      className={cn('ml-auto h-3 w-3 opacity-0', {
+                        'opacity-100':
+                          (!multiple && selectedValue === getOptionValue(option)) ||
+                          (multiple &&
+                            (selectedValue as string[]).includes(getOptionValue(option))),
+                      })}
                     />
                   </CommandItem>
                 ))}

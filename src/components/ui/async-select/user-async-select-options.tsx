@@ -16,9 +16,9 @@ export function getUserAsyncSelectOptions(
     placeholder: 'Select a user...',
     label: 'user',
     renderOption: (user) => (
-      <div>
+      <span>
         {user.firstName} {user.lastName}
-      </div>
+      </span>
     ),
   };
 }
