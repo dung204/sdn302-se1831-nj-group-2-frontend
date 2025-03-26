@@ -117,6 +117,7 @@ export function ManageGuestsPage() {
         pagination={res?.meta.pagination}
         sorting={res?.meta.sorting}
         filter={res?.meta.filter}
+        filterRulesFn={(existingRules) => existingRules.filter((rule) => rule.field !== 'role')}
         enableRowSelection={(row) => row.original.id !== user.id}
         onRowSelectionChange={setUsersToDelete}
         state={{
