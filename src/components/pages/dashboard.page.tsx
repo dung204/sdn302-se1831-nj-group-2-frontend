@@ -1,4 +1,6 @@
+import { useQuery } from '@tanstack/react-query';
 import { Navigate } from '@tanstack/react-router';
+import { Activity, Computer, DollarSign, UserIcon, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 
@@ -10,6 +12,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
+import { Skeleton } from '@/components/ui/skeleton';
+import { userHttpClient } from '@/lib/http';
 
 export const description = 'An interactive bar chart';
 
@@ -125,6 +129,15 @@ export function DashboardPage() {
   const { user } = useAuth();
   const [activeChart, setActiveChart] = useState<keyof typeof chartConfig>('desktop');
 
+  const { data: totalUsers, isLoading: isLoadingStats } = useQuery({
+    queryKey: ['dashboard', 'stats'],
+    queryFn: async () => {
+      const response = await userHttpClient.getDashboardStats();
+      return response.data;
+    },
+    enabled: !!user,
+  });
+
   const total = useMemo(
     () => ({
       desktop: chartData.reduce((acc, curr) => acc + curr.desktop, 0),
@@ -144,7 +157,64 @@ export function DashboardPage() {
   }
 
   return (
-    <>
+    <div className="flex flex-col gap-6">
+      {/* Summary Section */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardContent className="flex flex-row items-center justify-between p-6">
+            <div className="space-y-1">
+              <CardDescription>Total Revenue</CardDescription>
+              <CardTitle className="text-3xl">$24,580</CardTitle>
+              <p className="text-xs text-muted-foreground">+12.5% from last month</p>
+            </div>
+            <div className="rounded-full bg-primary/10 p-3">
+              <DollarSign className="h-6 w-6 text-primary" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex flex-row items-center justify-between p-6">
+            <div className="space-y-1">
+              <CardDescription>Active Computers</CardDescription>
+              <CardTitle className="text-3xl">28/35</CardTitle>
+              <p className="text-xs text-muted-foreground">80% utilization rate</p>
+            </div>
+            <div className="rounded-full bg-success/10 p-3">
+              <Computer className="h-6 w-6 text-success" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex flex-row items-center justify-between p-6">
+            <div className="space-y-1">
+              <CardDescription>Members</CardDescription>
+              {isLoadingStats ? (
+                <Skeleton className="h-9 w-24" />
+              ) : (
+                <CardTitle className="text-3xl">{totalUsers}</CardTitle>
+              )}
+              <p className="text-xs text-muted-foreground">+8 new this week</p>
+            </div>
+            <div className="rounded-full bg-secondary/10 p-3">
+              <UserIcon className="h-6 w-6 text-secondary" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex flex-row items-center justify-between p-6">
+            <div className="space-y-1">
+              <CardDescription>Current Sessions</CardDescription>
+              <CardTitle className="text-3xl">24</CardTitle>
+              <p className="text-xs text-muted-foreground">5 premium sessions</p>
+            </div>
+            <div className="rounded-full bg-danger/10 p-3">
+              <Activity className="h-6 w-6 text-danger" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Chart Card - Original Code */}
       <Card>
         <CardHeader className="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
           <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6">
@@ -215,6 +285,97 @@ export function DashboardPage() {
           </ChartContainer>
         </CardContent>
       </Card>
-    </>
+
+      {/* Recent Activities Section */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Activities</CardTitle>
+            <CardDescription>Latest events at your cafe</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[
+                {
+                  user: 'John Smith',
+                  action: 'Started session on PC #12',
+                  time: '10 minutes ago',
+                },
+                {
+                  user: 'Emma Johnson',
+                  action: 'Ordered food service',
+                  time: '25 minutes ago',
+                },
+                {
+                  user: 'David Chen',
+                  action: 'Ended session on PC #8',
+                  time: '42 minutes ago',
+                },
+                {
+                  user: 'Sarah Wilson',
+                  action: 'Booked a gaming room',
+                  time: '1 hour ago',
+                },
+                {
+                  user: 'Michael Davis',
+                  action: 'Purchased a membership',
+                  time: '2 hours ago',
+                },
+              ].map((activity, index) => (
+                <div key={index} className="flex items-center gap-4 rounded-lg border p-3">
+                  <div className="rounded-full bg-primary/10 p-2">
+                    <Users className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <p className="text-sm font-medium">{activity.user}</p>
+                    <p className="text-xs text-muted-foreground">{activity.action}</p>
+                  </div>
+                  <div className="text-xs text-muted-foreground">{activity.time}</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>System Status</CardTitle>
+            <CardDescription>Hardware and software health</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[
+                { name: 'Servers', status: 'Operational', health: 100 },
+                { name: 'Network', status: 'Operational', health: 98 },
+                { name: 'Billing System', status: 'Operational', health: 100 },
+                { name: 'Game Servers', status: 'Partial Outage', health: 75 },
+                { name: 'Printing Services', status: 'Operational', health: 92 },
+              ].map((service, index) => {
+                const getColorClass = (prefix: string) => {
+                  if (service.health === 100) return `${prefix}-success`;
+                  if (service.health > 90) return `${prefix}-warning`;
+                  return `${prefix}-danger`;
+                };
+
+                return (
+                  <div key={index} className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">{service.name}</p>
+                      <span className={`text-xs ${getColorClass('text')}`}>{service.status}</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-muted">
+                      <div
+                        className={`h-2 rounded-full ${getColorClass('bg')}`}
+                        style={{ width: `${service.health}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }

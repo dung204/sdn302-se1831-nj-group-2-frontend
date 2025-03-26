@@ -80,6 +80,12 @@ class UserHttpClient extends HttpClient {
       },
     );
   }
+
+  public getDashboardStats() {
+    return this.get<SuccessResponse<number>>('/users/dashboard/stats', {
+      isPrivateRoute: true,
+    });
+  }
 }
 
 export const userHttpClient = new UserHttpClient();
