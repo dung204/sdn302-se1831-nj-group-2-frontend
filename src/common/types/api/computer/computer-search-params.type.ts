@@ -14,6 +14,7 @@ export const computerSearchParamsSchema = commonSearchParamsSchema.extend({
   ]).optional(),
   name: z.string().optional(),
   branch: z.string().optional(),
+  position: z.string().optional(),
   status: z
     .union([
       z.nativeEnum(DeviceStatus).transform((value) => value.split(',')),

@@ -339,7 +339,11 @@ export function GuestComputerHomePage() {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Placeholder content for computer interface */}
         <div className="col-span-full flex h-[400px] items-center justify-center rounded-lg border bg-card p-6">
-          <p className="text-xl text-muted-foreground">Desktop Environment</p>
+          <img
+            src="https://i.redd.it/9s2t54ycbtz71.jpg"
+            alt="Computer Interface"
+            className="max-h-full max-w-full object-contain"
+          />
         </div>
       </div>
 

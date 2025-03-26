@@ -1,19 +1,19 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { type ComponentProps } from 'react';
 
-import { DeviceStatus } from '@/common/types';
 import type { Computer } from '@/common/types/api/computer';
+import { PositionStatus } from '@/common/types/api/position/position-status.type';
 
 import { DataTable, DataTableHeader, type FilterRule } from './data-table';
 
-function getStatusClass(status: DeviceStatus) {
+function getPositionStatusClass(status: PositionStatus) {
   switch (status) {
-    case DeviceStatus.NORMAL:
+    case PositionStatus.AVAILABLE:
       return 'text-green-600';
-    case DeviceStatus.MAINTENANCE:
-      return 'text-amber-600';
-    default:
+    case PositionStatus.IN_USE:
       return 'text-red-600';
+    default:
+      return 'text-amber-600';
   }
 }
 
@@ -26,18 +26,17 @@ const computerDataTableGuestColumns = [
     accessorKey: 'position',
     header: 'Position',
     cell: ({ row }) => {
-      const status = row.original.status as DeviceStatus;
-      return <span className={getStatusClass(status)}>{status}</span>;
+      return row.original.position?.name || 'N/A';
     },
   },
   {
-    accessorKey: 'status',
+    accessorKey: 'position.status',
     header: ({ column }) => <DataTableHeader column={column} title="Status" />,
     cell: ({ row }) => {
-      const status = row.original.status;
+      const status = row.original.position?.status as PositionStatus;
       return (
-        <div className={`capitalize ${getStatusClass(status)}`}>
-          {status?.toLowerCase().replace('_', ' ')}
+        <div className={`capitalize ${getPositionStatusClass(status)}`}>
+          {status?.toLowerCase().replace('_', ' ') || 'N/A'}
         </div>
       );
     },
@@ -52,9 +51,9 @@ const computerDataTableGuestColumns = [
 const filterRules: FilterRule<Computer>[] = [
   { field: 'name', type: 'text' },
   {
-    field: 'status',
+    field: 'position', //FIXME: This should be position.status
     type: 'select',
-    options: Object.values(DeviceStatus).map((status) => ({ label: status, value: status })),
+    options: Object.values(PositionStatus).map((status) => ({ label: status, value: status })),
   },
   { field: 'pricePerHour', type: 'number', range: true },
 ];
