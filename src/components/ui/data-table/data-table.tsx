@@ -307,8 +307,12 @@ function FilterDialog<TData>({
   }, [table]);
 
   const countEnabledFilters = useMemo(() => {
-    return new Set(Object.keys(filter ?? {}).map((key) => key.replaceAll(/^(from|to)/g, ''))).size;
-  }, [filter]);
+    return new Set(
+      Object.keys(filter ?? {})
+        .filter((field) => !!headerTitles.find((header) => header.field === field))
+        .map((key) => key.replaceAll(/^(from|to)/g, '')),
+    ).size;
+  }, [filter, headerTitles]);
 
   const handleApplyFilter = () => {
     navigate({ to: location.pathname, search: { ...filterState } });
@@ -528,7 +532,10 @@ function FilterDialog<TData>({
                           const { [fromField]: _, ...rest } = newFilterState;
                           newFilterState = { ...rest };
                         } else {
-                          newFilterState = { ...newFilterState, [fromField]: from.toString() };
+                          newFilterState = {
+                            ...newFilterState,
+                            [fromField]: from as unknown as string,
+                          };
                         }
 
                         if (to !== 0 && !to) {
@@ -536,7 +543,7 @@ function FilterDialog<TData>({
                           const { [toField]: _, ...rest } = newFilterState;
                           newFilterState = { ...rest };
                         } else {
-                          newFilterState = { ...filterState, [toField]: to.toString() };
+                          newFilterState = { ...filterState, [toField]: to as unknown as string };
                         }
 
                         setFilterState(newFilterState);
@@ -564,7 +571,10 @@ function FilterDialog<TData>({
                           const { [fromField]: _, ...rest } = newFilterState;
                           newFilterState = { ...rest };
                         } else {
-                          newFilterState = { ...newFilterState, [fromField]: from.toString() };
+                          newFilterState = {
+                            ...newFilterState,
+                            [fromField]: from as unknown as string,
+                          };
                         }
 
                         if (to !== 0 && !to) {
@@ -572,7 +582,7 @@ function FilterDialog<TData>({
                           const { [toField]: _, ...rest } = newFilterState;
                           newFilterState = { ...rest };
                         } else {
-                          newFilterState = { ...filterState, [toField]: to.toString() };
+                          newFilterState = { ...filterState, [toField]: to as unknown as string };
                         }
 
                         setFilterState(newFilterState);
@@ -596,7 +606,7 @@ function FilterDialog<TData>({
 
                         setFilterState((state) => ({
                           ...state,
-                          [rule.field as string]: value.toString(),
+                          [rule.field as string]: value as unknown as string,
                         }));
                       }}
                     />
@@ -617,7 +627,7 @@ function FilterDialog<TData>({
 
                       setFilterState((state) => ({
                         ...state,
-                        [rule.field as string]: value.toString(),
+                        [rule.field as string]: value as unknown as string,
                       }));
                     }}
                   />

@@ -61,7 +61,7 @@ export function ManageServiceCategoriesPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { data: res, isLoading } = useQuery({
-    queryKey: ['serviceCategories', 'all', searchParams],
+    queryKey: ['service-categories', 'all', searchParams],
     queryFn: async () => serviceCategoryHttpClient.getAllServiceCategories(searchParams),
   });
 
@@ -205,9 +205,9 @@ function ServiceCategoryDeleteDialog({
       return Object.groupBy(result, (r) => r.status);
     },
     onSuccess: async ({ fulfilled, rejected }) => {
-      await queryClient.invalidateQueries({ queryKey: ['serviceCategories', 'all'] });
+      await queryClient.invalidateQueries({ queryKey: ['service-categories', 'all'] });
       const res = queryClient.getQueryData<SuccessResponse<ServiceCategory[]>>([
-        'serviceCategories',
+        'service-categories',
         'all',
         searchParams,
       ]);
@@ -271,7 +271,7 @@ function ServiceCategoryUpdateDialog({
   const { mutateAsync: triggerUpdateCategory } = useMutation({
     mutationFn: serviceCategoryHttpClient.updateServiceCategory(category?.id ?? ''),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['serviceCategories', 'all'] });
+      await queryClient.invalidateQueries({ queryKey: ['service-categories', 'all'] });
       toast.success('Service category updated successfully!');
       handleOpenChange(false);
     },
@@ -344,7 +344,7 @@ function ServiceCategoryCreateDialog({ onOpenChange, ...props }: ComponentProps<
     mutationFn: (payload: CreateServiceCategorySchema) =>
       serviceCategoryHttpClient.createNewServiceCategory(payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['serviceCategories', 'all'] });
+      await queryClient.invalidateQueries({ queryKey: ['service-categories', 'all'] });
       toast.success('Service category created successfully!');
       handleOpenChange(false);
     },

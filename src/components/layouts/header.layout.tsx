@@ -7,6 +7,8 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/common/hooks';
+import { localStorageService } from '@/common/services';
+import { LocalStorageKey } from '@/common/types';
 import { type ChangePasswordSchema, changePasswordSchema } from '@/common/types/api/auth';
 import type { User } from '@/common/types/api/user';
 import { navItems } from '@/components/layouts';
@@ -108,6 +110,7 @@ function UserMenu() {
     mutationFn: () => authHttpClient.logout(),
     onSuccess: () => {
       logout();
+      localStorageService.remove(LocalStorageKey.BRANCH_ID);
       navigate({ to: '/login', reloadDocument: true });
     },
   });

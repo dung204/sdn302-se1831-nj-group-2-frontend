@@ -9,3 +9,4 @@ export * from './provider.http';
 export * from './service-category.http';
 export * from './service.http';
 export * from './usage-tracking.http';
+export * from './bill.http';

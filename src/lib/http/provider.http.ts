@@ -2,6 +2,7 @@ import type { SuccessResponse } from '@/common/types';
 import type {
   CreateProviderSchema,
   Provider,
+  ProviderSearchParams,
   UpdateProviderSchema,
 } from '@/common/types/api/provider';
 import { envVariables } from '@/common/utils';
@@ -13,15 +14,17 @@ class ProviderHttpClient extends HttpClient {
     super(`${envVariables.API_ENDPOINT}/providers`);
   }
 
-  getAllProvider() {
+  getAllProviders(params?: ProviderSearchParams) {
     return this.get<SuccessResponse<Provider[]>>('/', {
       isPrivateRoute: true,
+      params,
     });
   }
 
-  getAllDeletedProvider() {
+  getAllDeletedProviders(params?: ProviderSearchParams) {
     return this.get<SuccessResponse<Provider[]>>('/deleted', {
       isPrivateRoute: true,
+      params,
     });
   }
 
