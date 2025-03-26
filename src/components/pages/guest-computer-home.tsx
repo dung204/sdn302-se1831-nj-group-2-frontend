@@ -9,6 +9,7 @@ import { z } from 'zod';
 
 import { useAuth } from '@/common/hooks';
 import type { CreateBillSchema } from '@/common/types/api/bill/create-bill.type';
+import type { Service } from '@/common/types/api/service';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -38,7 +39,13 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { billHttpClient, computerHttpClient, positionHttpClient } from '@/lib/http';
+import {
+  billHttpClient,
+  computerHttpClient,
+  positionHttpClient,
+  serviceCategoryHttpClient,
+  serviceHttpClient,
+} from '@/lib/http';
 
 // Time selection form schema
 const timeSelectionSchema = z.object({
@@ -54,20 +61,6 @@ const PRICE_PER_HOUR = 15000; // 15,000 VND per hour
 const formatCurrency = (amount: number) => {
   return `$${amount.toFixed(2)}`;
 };
-
-// Mock service data
-const mockServices = [
-  { id: '1', name: 'Instant Noodles', price: 15, category: 'Food' },
-  { id: '2', name: 'Soft Drink', price: 10, category: 'Drink' },
-  { id: '3', name: 'Coffee', price: 20, category: 'Drink' },
-  { id: '4', name: 'Sandwich', price: 25, category: 'Food' },
-  { id: '5', name: 'Chips', price: 12, category: 'Food' },
-  { id: '6', name: 'Energy Drink', price: 30, category: 'Drink' },
-  { id: '7', name: 'Chocolate Bar', price: 15, category: 'Food' },
-  { id: '8', name: 'Ice Cream', price: 18, category: 'Food' },
-  { id: '9', name: 'Water Bottle', price: 8, category: 'Drink' },
-  { id: '10', name: 'Pizza Slice', price: 35, category: 'Food' },
-];
 
 // Selected service item type
 type SelectedService = {
@@ -155,6 +148,24 @@ export function GuestComputerHomePage() {
       }),
     enabled: !!positionId && !!position,
   });
+
+  // Fetch service categories
+  const { data: serviceCategoriesData, isLoading: isServiceCategoriesLoading } = useQuery({
+    queryKey: ['serviceCategories'],
+    queryFn: () => serviceCategoryHttpClient.getAllServiceCategories(),
+    enabled: !!user,
+  });
+
+  // Fetch services
+  const { data: servicesData, isLoading: isServicesLoading } = useQuery({
+    queryKey: ['services'],
+    queryFn: () => serviceHttpClient.getAllService(),
+    enabled: !!user,
+  });
+
+  // Process service data
+  const serviceCategories = serviceCategoriesData?.data || [];
+  const services = servicesData?.data || [];
 
   // Since a position has exactly one computer, we can get it directly
   const computer = computerData?.data?.[0];
@@ -360,7 +371,7 @@ export function GuestComputerHomePage() {
   };
 
   // Handle order service
-  const handleOrderService = (service: (typeof mockServices)[0]) => {
+  const handleOrderService = (service: Service) => {
     const existingServiceIndex = selectedServices.findIndex((item) => item.id === service.id);
 
     if (existingServiceIndex >= 0) {
@@ -469,6 +480,16 @@ export function GuestComputerHomePage() {
   const formatOrderTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
+
+  // Group services by their category
+  const groupedServices: Record<string, Service[]> = {};
+  services.forEach((service) => {
+    const categoryId = service.category.id;
+    if (!groupedServices[categoryId]) {
+      groupedServices[categoryId] = [];
+    }
+    groupedServices[categoryId].push(service);
+  });
 
   if (isPositionLoading || isComputerLoading) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
@@ -681,345 +702,18 @@ export function GuestComputerHomePage() {
                   <h3 className="mb-3 text-lg font-semibold">Available Services</h3>
                   <Card>
                     <CardContent className="p-4">
-                      <ScrollArea className="h-[350px] pr-4">
-                        {/* Group services by category */}
-                        {['Food', 'Drink'].map((category) => (
-                          <div key={category} className="mb-4">
-                            <h4 className="mb-2 font-semibold">{category}</h4>
-                            <div className="grid grid-cols-1 gap-2">
-                              {mockServices
-                                .filter((service) => service.category === category)
-                                .map((service) => (
-                                  <Card
-                                    key={service.id}
-                                    className="cursor-pointer hover:bg-accent"
-                                    onClick={() => handleOrderService(service)}
-                                  >
-                                    <CardContent className="flex items-center justify-between p-3">
-                                      <div>{service.name}</div>
-                                      <div>{formatCurrency(service.price)}</div>
-                                    </CardContent>
-                                  </Card>
-                                ))}
-                            </div>
-                          </div>
-                        ))}
-                      </ScrollArea>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Invoice panel (right side) */}
-                <div>
-                  <h3 className="mb-3 text-lg font-semibold">Your Order</h3>
-                  <Card>
-                    <CardContent className="p-4">
-                      {selectedServices.length === 0 ? (
-                        <div className="py-8 text-center text-muted-foreground">
-                          No items added to your order yet
+                      {isServiceCategoriesLoading || isServicesLoading ? (
+                        <div className="flex h-[350px] items-center justify-center">
+                          Loading services...
                         </div>
                       ) : (
-                        <div>
-                          <div className="mb-2 grid grid-cols-12 font-medium">
-                            <div className="col-span-5">Item</div>
-                            <div className="col-span-2 text-right">Price</div>
-                            <div className="col-span-3 text-center">Qty</div>
-                            <div className="col-span-2 text-right">Total</div>
-                          </div>
-                          <ScrollArea className="h-[300px] pr-4">
-                            {selectedServices.map((service) => (
-                              <div key={service.id} className="grid grid-cols-12 items-center py-2">
-                                <div className="col-span-5 font-medium">{service.name}</div>
-                                <div className="col-span-2 text-right">
-                                  {formatCurrency(service.price)}
-                                </div>
-                                <div className="col-span-3 flex items-center justify-center space-x-1">
-                                  <Button
-                                    size="icon"
-                                    variant="outline"
-                                    className="size-7"
-                                    onClick={() =>
-                                      handleQuantityChange(service.id, service.quantity - 1)
-                                    }
-                                  >
-                                    <Minus className="size-3" />
-                                  </Button>
-                                  <span className="w-6 text-center">{service.quantity}</span>
-                                  <Button
-                                    size="icon"
-                                    variant="outline"
-                                    className="size-7"
-                                    onClick={() =>
-                                      handleQuantityChange(service.id, service.quantity + 1)
-                                    }
-                                  >
-                                    <Plus className="size-3" />
-                                  </Button>
-                                </div>
-                                <div className="col-span-1 text-right">
-                                  {formatCurrency(service.price * service.quantity)}
-                                </div>
-                                <div className="col-span-1 text-right">
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="size-7"
-                                    onClick={() => handleRemoveService(service.id)}
-                                  >
-                                    <Trash className="size-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                          </ScrollArea>
-                          <Separator className="my-3" />
-                          <div className="flex justify-between">
-                            <div className="text-lg font-bold">Total:</div>
-                            <div className="text-lg font-bold">
-                              {formatCurrency(calculateTotal())}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-
-              <DialogFooter className="mt-6 gap-2 sm:gap-0">
-                <Button type="button" variant="outline" onClick={() => setShowOrderDialog(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleConfirmOrder}
-                  disabled={selectedServices.length === 0}
-                >
-                  Confirm Order
-                </Button>
-              </DialogFooter>
-            </TabsContent>
-
-            <TabsContent value="history" className="mt-4">
-              <h3 className="mb-3 text-lg font-semibold">Your Order History</h3>
-              <Card>
-                <CardContent className="p-4">
-                  {orderedServices.length === 0 ? (
-                    <div className="py-8 text-center text-muted-foreground">
-                      You haven't placed any orders yet
-                    </div>
-                  ) : (
-                    <ScrollArea className="h-[400px] pr-4">
-                      {orderedServices
-                        .sort((a, b) => b.orderedAt.getTime() - a.orderedAt.getTime()) // Sort by most recent
-                        .map((service, index) => (
-                          <div
-                            key={`${service.id}-${index}`}
-                            className="mb-4 rounded-md border p-3"
-                          >
-                            <div className="mb-2 flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">{service.name}</span>
-                                {getStatusBadge(service.status)}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                Ordered at {formatOrderTime(service.orderedAt)}
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-3 text-sm">
-                              <div>
-                                Quantity: <span className="font-medium">{service.quantity}</span>
-                              </div>
-                              <div>
-                                Price:{' '}
-                                <span className="font-medium">{formatCurrency(service.price)}</span>
-                              </div>
-                              <div className="text-right">
-                                Total:{' '}
-                                <span className="font-medium">
-                                  {formatCurrency(service.price * service.quantity)}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="mt-2 flex items-center text-sm text-muted-foreground">
-                              {service.status === 'pending' && (
-                                <div className="flex items-center gap-1">
-                                  <Clock3 className="size-3" /> Estimated time: 10-15 minutes
-                                </div>
-                              )}
-                              {service.status === 'preparing' && (
-                                <div className="flex items-center gap-1">
-                                  <Clock3 className="size-3" /> Almost ready, will be delivered soon
-                                </div>
-                              )}
-                              {service.status === 'delivered' && (
-                                <div className="flex items-center gap-1">
-                                  <CheckCircle className="size-3 text-green-500" /> Delivered
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                    </ScrollArea>
-                  )}
-                </CardContent>
-              </Card>
-
-              <DialogFooter className="mt-6">
-                <Button type="button" variant="outline" onClick={() => setShowOrderDialog(false)}>
-                  Close
-                </Button>
-              </DialogFooter>
-            </TabsContent>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
-
-      {/* Initial time selection dialog */}
-      <Dialog open={showTimeSelectionDialog} onOpenChange={() => {}}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Select Play Time</DialogTitle>
-            <DialogDescription>
-              Choose how long you want to use this computer. The cost is{' '}
-              {formatCurrency(computerPrice)} per hour.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...timeSelectionForm}>
-            <form
-              onSubmit={timeSelectionForm.handleSubmit(handleTimeSelection)}
-              className="space-y-4"
-            >
-              <FormField
-                control={timeSelectionForm.control}
-                name="hours"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel required>Hours</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select hours" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {[1, 2, 3, 4, 5, 6].map((hour) => (
-                          <SelectItem key={hour} value={String(hour)}>
-                            {hour} hour{hour > 1 ? 's' : ''} ({formatCurrency(hour * computerPrice)}
-                            )
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormItem>
-                <FormLabel>Your Balance</FormLabel>
-                <div className="text-lg font-medium">{formatCurrency(user?.balance || 0)}</div>
-              </FormItem>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate({ to: '/guests/login-computer' })}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isCreatingBill}>
-                  Confirm Payment
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add time dialog */}
-      <Dialog open={showAddTimeDialog} onOpenChange={setShowAddTimeDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add More Time</DialogTitle>
-            <DialogDescription>
-              Add more time to your current session. The cost is {formatCurrency(computerPrice)} per
-              hour.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...addTimeForm}>
-            <form onSubmit={addTimeForm.handleSubmit(handleAddTime)} className="space-y-4">
-              <FormField
-                control={addTimeForm.control}
-                name="hours"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel required>Additional Hours</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select hours" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {[1, 2, 3, 4, 5, 6].map((hour) => (
-                          <SelectItem key={hour} value={String(hour)}>
-                            {hour} hour{hour > 1 ? 's' : ''} ({formatCurrency(hour * computerPrice)}
-                            )
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormItem>
-                <FormLabel>Your Balance</FormLabel>
-                <div className="text-lg font-medium">{formatCurrency(user?.balance || 0)}</div>
-              </FormItem>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setShowAddTimeDialog(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit">Add Time</Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Order Services Dialog */}
-      <Dialog open={showOrderDialog} onOpenChange={setShowOrderDialog}>
-        <DialogContent className="w-full max-w-[80vw]">
-          <DialogHeader>
-            <DialogTitle>Order Services</DialogTitle>
-            <DialogDescription>
-              Place your order or check the status of your previous orders.
-            </DialogDescription>
-          </DialogHeader>
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="order">New Order</TabsTrigger>
-              <TabsTrigger value="history">Order History</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="order" className="mt-4">
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {/* Services selection panel (left side) */}
-                <div>
-                  <h3 className="mb-3 text-lg font-semibold">Available Services</h3>
-                  <Card>
-                    <CardContent className="p-4">
-                      <ScrollArea className="h-[350px] pr-4">
-                        {/* Group services by category */}
-                        {['Food', 'Drink'].map((category) => (
-                          <div key={category} className="mb-4">
-                            <h4 className="mb-2 font-semibold">{category}</h4>
-                            <div className="grid grid-cols-1 gap-2">
-                              {mockServices
-                                .filter((service) => service.category === category)
-                                .map((service) => (
+                        <ScrollArea className="h-[350px] pr-4">
+                          {/* Group services by category */}
+                          {serviceCategories.map((category) => (
+                            <div key={category.id} className="mb-4">
+                              <h4 className="mb-2 font-semibold">{category.name}</h4>
+                              <div className="grid grid-cols-1 gap-2">
+                                {(groupedServices[category.id] || []).map((service) => (
                                   <Card
                                     key={service.id}
                                     className="cursor-pointer hover:bg-accent"
@@ -1031,10 +725,16 @@ export function GuestComputerHomePage() {
                                     </CardContent>
                                   </Card>
                                 ))}
+                                {(groupedServices[category.id] || []).length === 0 && (
+                                  <div className="py-2 text-center text-sm text-muted-foreground">
+                                    No services available in this category
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </ScrollArea>
+                          ))}
+                        </ScrollArea>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
