@@ -4,7 +4,12 @@ import { commonSearchParamsSchema } from '@/common/types/common-search-params.ty
 import { SortingUtils } from '@/common/utils';
 
 export const providerSearchParamsSchema = commonSearchParamsSchema.extend({
-  sorting: SortingUtils.getSortingValueSchema(['id', 'name', 'createTimestamp', 'deleteTimestamp']),
+  sorting: SortingUtils.getSortingValueSchema([
+    'id',
+    'name',
+    'createTimestamp',
+    'deleteTimestamp',
+  ]).optional(),
   name: z.string().optional(),
 });
 

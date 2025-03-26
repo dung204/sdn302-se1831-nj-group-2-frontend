@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
-import { commonSearchParamsSchema } from '@/common/types/common-search-params.type';
-import { DeviceStatus } from '@/common/types/device-status.type';
+import { DeviceStatus, commonSearchParamsSchema } from '@/common/types';
 import { SortingUtils } from '@/common/utils';
 
 export const computerSearchParamsSchema = commonSearchParamsSchema.extend({
@@ -9,8 +8,10 @@ export const computerSearchParamsSchema = commonSearchParamsSchema.extend({
     'id',
     'name',
     'status',
-    'createTimestamp',
-    'deleteTimestamp',
+    'pricePerHour',
+    'cpu',
+    'ram',
+    'storage',
   ]).optional(),
   name: z.string().optional(),
   position: z.string().optional(),
@@ -20,9 +21,11 @@ export const computerSearchParamsSchema = commonSearchParamsSchema.extend({
       z.array(z.nativeEnum(DeviceStatus)),
     ])
     .optional(),
+  pricePerHour: z.number().optional(),
+  cpu: z.string().optional(),
+  ram: z.string().optional(),
+  storage: z.string().optional(),
   provider: z.string().optional(),
-  fromPricePerHour: z.string().optional(),
-  toPricePerHour: z.string().optional(),
 });
 
 export type ComputerSearchParams = z.infer<typeof computerSearchParamsSchema>;
