@@ -1,6 +1,7 @@
-import { Link, useLocation } from '@tanstack/react-router';
+import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import {
   ChevronRight,
+  ChevronsUpDown,
   Computer,
   Gauge,
   LandPlot,
@@ -16,7 +17,7 @@ import {
 } from 'lucide-react';
 import { type ComponentProps, type ReactNode } from 'react';
 
-import { useAuth } from '@/common/hooks';
+import { useAuth, useBranch } from '@/common/hooks';
 import { Role } from '@/common/types/api/user';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
@@ -207,7 +208,9 @@ export const navItems: Record<Role, NavItem[]> = {
 
 export function SidebarLayout({ ...props }: ComponentProps<typeof Sidebar>) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
+  const { branch } = useBranch();
 
   return (
     <Sidebar {...props}>
@@ -215,13 +218,29 @@ export function SidebarLayout({ ...props }: ComponentProps<typeof Sidebar>) {
         <SidebarMenuButton
           size="lg"
           className="transition-all data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+          title={user?.role === Role.GUEST ? 'Click to change branch' : ''}
+          onClick={
+            user?.role !== Role.GUEST
+              ? undefined
+              : () => {
+                  navigate({ to: '/guest/branches' });
+                }
+          }
         >
           <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
             <Router className="size-4" />
           </div>
           <div className="flex flex-col gap-0.5 leading-none">
             <span className="font-semibold">Internet café</span>
+            <span className="line-clamp-1">
+              Branch: {user?.role === Role.GUEST ? branch?.name : user?.branch?.name}
+            </span>
           </div>
+          {user?.role === Role.GUEST && (
+            <div className="flex items-center justify-center">
+              <ChevronsUpDown className="size-4" />
+            </div>
+          )}
         </SidebarMenuButton>
       </SidebarHeader>
       <SidebarContent className="gap-0">
