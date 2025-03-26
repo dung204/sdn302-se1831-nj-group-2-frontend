@@ -196,7 +196,12 @@ export const navItems: Record<Role, NavItem[]> = {
     {
       title: 'Computers',
       icon: <Computer className="size-4" />,
-      url: '/computers',
+      url: '/guest/computers',
+    },
+    {
+      title: 'Computers Login Emulator',
+      icon: <Computer className="size-4" />,
+      url: '/guests/login-computer',
     },
     {
       title: 'My bills',

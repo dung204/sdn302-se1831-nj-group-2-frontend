@@ -55,8 +55,9 @@ const filterRules: FilterRule<User>[] = [
 ];
 
 interface UserDataTableProps
-  extends Omit<ComponentProps<typeof DataTable<User>>, 'columns' | 'getRowId'> {
+  extends Omit<ComponentProps<typeof DataTable<User>>, 'columns' | 'getRowId' | 'filterRules'> {
   renderColumns?: (existingColumns: typeof userDataTableColumns) => ColumnDef<User>[];
+  filterRulesFn?: (existingFilterRules: typeof filterRules) => FilterRule<User>[];
 }
 
 export function UserDataTable({ renderColumns, filter, ...props }: UserDataTableProps) {
@@ -64,7 +65,7 @@ export function UserDataTable({ renderColumns, filter, ...props }: UserDataTable
     <DataTable
       getRowId={(row) => row.id}
       columns={!renderColumns ? userDataTableColumns : renderColumns(userDataTableColumns)}
-      filterRules={filterRules}
+      filterRules={!props.filterRulesFn ? filterRules : props.filterRulesFn(filterRules)}
       filter={filter}
       {...props}
     />
