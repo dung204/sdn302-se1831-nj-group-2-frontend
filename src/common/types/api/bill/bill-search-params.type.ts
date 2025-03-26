@@ -4,26 +4,21 @@ import { commonSearchParamsSchema } from '@/common/types/common-search-params.ty
 import { SortingUtils } from '@/common/utils';
 
 export const billSearchParamsSchema = commonSearchParamsSchema.extend({
+  user: z.string().optional(),
+  computerId: z.string().optional(),
+  startDateFrom: z.string().optional(),
+  startDateTo: z.string().optional(),
+  endDateFrom: z.string().optional(),
+  endDateTo: z.string().optional(),
   sorting: SortingUtils.getSortingValueSchema([
     'id',
-    'computer',
-    'services',
-    'totalPrice',
+    'user',
     'startTimestamp',
     'endTimestamp',
-    'maxEndTimestamp',
-    'maxHoldingTimestamp',
+    'totalPrice',
     'createTimestamp',
     'deleteTimestamp',
-  ]).optional(),
-  user: z.string().optional(),
-  computer: z.string().optional(),
-  services: z.array(z.string()).optional(),
-  totalPrice: z.number().optional(),
-  maxEndTimestamp: z.coerce.date().optional(),
-  maxHoldingTimestamp: z.coerce.date().optional(),
-  startTimeStamp: z.coerce.date().optional(),
-  endTimeStamp: z.coerce.date().optional(),
+  ]),
 });
 
 export type BillSearchParams = z.infer<typeof billSearchParamsSchema>;

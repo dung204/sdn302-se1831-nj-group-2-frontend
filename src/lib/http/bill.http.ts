@@ -1,5 +1,5 @@
 import type { SuccessResponse } from '@/common/types';
-import type { Bill, BillSearchParams } from '@/common/types/api/bill';
+import type { Bill, BillSearchParams, CreateBillSchema } from '@/common/types/api/bill';
 import { envVariables } from '@/common/utils';
 
 import { HttpClient } from './core.http';
@@ -29,6 +29,19 @@ class BillHttpClient extends HttpClient {
     });
   }
 
+  createNewBill(payload: CreateBillSchema) {
+    return this.post<SuccessResponse<Bill>>('/', payload, {
+      isPrivateRoute: true,
+    });
+  }
+
+  updateBill(id: string) {
+    return (payload: Partial<CreateBillSchema>) =>
+      this.patch<SuccessResponse<Bill>>(`/${id}`, payload, {
+        isPrivateRoute: true,
+      });
+  }
+
   softDeleteBill(id: string) {
     return this.delete<void>(`/${id}`, {
       isPrivateRoute: true,
@@ -40,31 +53,6 @@ class BillHttpClient extends HttpClient {
       isPrivateRoute: true,
     });
   }
-
-  //   createNewBill(payload: CreateBillSchema) {
-  //     return this.post<SuccessResponse<Bill>>('/', payload, {
-  //       isPrivateRoute: true,
-  //     });
-  //   }
-
-  //   updateBill(id: string) {
-  //     return (payload: UpdateBillSchema) =>
-  //       this.patch<SuccessResponse<Bill>>(`/${id}`, payload, {
-  //         isPrivateRoute: true,
-  //       });
-  //   }
-
-  //   restoreBill(id: string) {
-  //     return this.patch<void>(`/restore/${id}`, undefined, {
-  //       isPrivateRoute: true,
-  //     });
-  //   }
-
-  //   payBill(id: string) {
-  //     return this.patch<SuccessResponse<Bill>>(`/${id}/pay`, undefined, {
-  //       isPrivateRoute: true,
-  //     });
-  //   }
 }
 
 export const billHttpClient = new BillHttpClient();

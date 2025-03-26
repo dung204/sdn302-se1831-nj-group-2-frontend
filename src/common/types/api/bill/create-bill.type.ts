@@ -1,15 +1,24 @@
 import { z } from 'zod';
 
+import { ServiceStatus } from './bill.type';
+
 export const createBillSchema = z.object({
-  // TODO: Add additional properties
-  user: z.string().nonempty('A user must be selected'),
-  computer: z.string().nonempty('A computer must be selected'),
-  service: z.array(z.string()).nonempty('At least one service must be selected'),
-  startTimeStamp: z.string().nonempty('Start timestamp is required'),
-  endTimeStamp: z.string().nonempty('End timestamp is required'),
-  maxEndTimestamp: z.string().nonempty('Max end timestamp is required'),
-  maxHoldingTimestamp: z.string().nonempty('Max holding timestamp is required'),
-  totalPrice: z.coerce.number(),
+  user: z.string().nonempty('User ID is required'),
+  computer: z.string().nonempty('Computer ID is required'),
+  services: z
+    .array(
+      z.object({
+        _id: z.string().nonempty('Service ID is required'),
+        quantity: z.number().default(1),
+        status: z.nativeEnum(ServiceStatus).default(ServiceStatus.PENDING),
+      }),
+    )
+    .optional()
+    .default([]),
+  startTimestamp: z.date().nullable().optional(),
+  endTimestamp: z.date().nullable().optional(),
+  maxEndTimestamp: z.date().nullable().optional(),
+  maxHoldingTimestamp: z.date().nullable().optional(),
 });
 
 export type CreateBillSchema = z.infer<typeof createBillSchema>;

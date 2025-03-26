@@ -1,19 +1,30 @@
 import type { BaseModel } from '@/common/types';
-import type { Computer } from '@/common/types/api/computer';
-import type { Service } from '@/common/types/api/service';
-import type { User } from '@/common/types/api/user';
 
- 
+export enum ServiceStatus {
+  PENDING = 'PENDING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}
+
 export interface Bill extends BaseModel {
-  // TODO: Add properties
-  id: string;
-  user: User;
-  computer: Computer;
-  services: Service[];
-  startTimestamp: string;
-  endTimestamp: string;
-  maxEndTimestamp: string;
-  maxHoldingTimestamp: string;
+  user: string;
+  computer: {
+    _id: string;
+    name: string;
+    pricePerHour: number;
+    holdingFee: number;
+  };
+  services: {
+    _id: string;
+    name: string;
+    price: number;
+    quantity: number;
+    status: ServiceStatus;
+  }[];
+  startTimestamp: Date | null;
+  endTimestamp: Date | null;
+  maxEndTimestamp: Date | null;
+  maxHoldingTimestamp: Date | null;
   totalPrice: number;
-  createTimestamp: string;
 }
