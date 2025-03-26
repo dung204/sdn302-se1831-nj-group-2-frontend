@@ -86,8 +86,8 @@ const NonAuthLayoutGuestsLoginComputerIndexLazyImport = createFileRoute(
 const NonAuthLayoutGuestsDeletedIndexLazyImport = createFileRoute(
   '/_non-auth-layout/guests/deleted/',
 )()
-const NonAuthLayoutGuestsBranchesIndexLazyImport = createFileRoute(
-  '/_non-auth-layout/guests/branches/',
+const NonAuthLayoutGuestComputersIndexLazyImport = createFileRoute(
+  '/_non-auth-layout/guest/computers/',
 )()
 const NonAuthLayoutComputersDeletedIndexLazyImport = createFileRoute(
   '/_non-auth-layout/computers/deleted/',
@@ -102,8 +102,6 @@ const NonAuthLayoutGuestsLoginComputerPositionPositionIdIndexLazyImport =
   createFileRoute(
     '/_non-auth-layout/guests/login-computer/position/$positionId/',
   )()
-const NonAuthLayoutGuestsBranchesBranchIdComputersIndexLazyImport =
-  createFileRoute('/_non-auth-layout/guests/branches/$branchId/computers/')()
 const NonAuthLayoutGuestsLoginComputerPositionPositionIdComputerIndexLazyImport =
   createFileRoute(
     '/_non-auth-layout/guests/login-computer/position/$positionId/computer/',
@@ -372,13 +370,13 @@ const NonAuthLayoutGuestsDeletedIndexLazyRoute =
     ),
   )
 
-const NonAuthLayoutGuestsBranchesIndexLazyRoute =
-  NonAuthLayoutGuestsBranchesIndexLazyImport.update({
-    id: '/guests/branches/',
-    path: '/guests/branches/',
+const NonAuthLayoutGuestComputersIndexLazyRoute =
+  NonAuthLayoutGuestComputersIndexLazyImport.update({
+    id: '/guest/computers/',
+    path: '/guest/computers/',
     getParentRoute: () => NonAuthLayoutRoute,
   } as any).lazy(() =>
-    import('./routes/_non-auth-layout/guests/branches/index.lazy').then(
+    import('./routes/_non-auth-layout/guest/computers/index.lazy').then(
       (d) => d.Route,
     ),
   )
@@ -424,17 +422,6 @@ const NonAuthLayoutGuestsLoginComputerPositionPositionIdIndexLazyRoute =
   } as any).lazy(() =>
     import(
       './routes/_non-auth-layout/guests/login-computer/position/$positionId/index.lazy'
-    ).then((d) => d.Route),
-  )
-
-const NonAuthLayoutGuestsBranchesBranchIdComputersIndexLazyRoute =
-  NonAuthLayoutGuestsBranchesBranchIdComputersIndexLazyImport.update({
-    id: '/guests/branches/$branchId/computers/',
-    path: '/guests/branches/$branchId/computers/',
-    getParentRoute: () => NonAuthLayoutRoute,
-  } as any).lazy(() =>
-    import(
-      './routes/_non-auth-layout/guests/branches/$branchId/computers/index.lazy'
     ).then((d) => d.Route),
   )
 
@@ -588,11 +575,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NonAuthLayoutComputersDeletedIndexLazyImport
       parentRoute: typeof NonAuthLayoutImport
     }
-    '/_non-auth-layout/guests/branches/': {
-      id: '/_non-auth-layout/guests/branches/'
-      path: '/guests/branches'
-      fullPath: '/guests/branches'
-      preLoaderRoute: typeof NonAuthLayoutGuestsBranchesIndexLazyImport
+    '/_non-auth-layout/guest/computers/': {
+      id: '/_non-auth-layout/guest/computers/'
+      path: '/guest/computers'
+      fullPath: '/guest/computers'
+      preLoaderRoute: typeof NonAuthLayoutGuestComputersIndexLazyImport
       parentRoute: typeof NonAuthLayoutImport
     }
     '/_non-auth-layout/guests/deleted/': {
@@ -665,13 +652,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NonAuthLayoutUsersDeletedIndexLazyImport
       parentRoute: typeof NonAuthLayoutImport
     }
-    '/_non-auth-layout/guests/branches/$branchId/computers/': {
-      id: '/_non-auth-layout/guests/branches/$branchId/computers/'
-      path: '/guests/branches/$branchId/computers'
-      fullPath: '/guests/branches/$branchId/computers'
-      preLoaderRoute: typeof NonAuthLayoutGuestsBranchesBranchIdComputersIndexLazyImport
-      parentRoute: typeof NonAuthLayoutImport
-    }
     '/_non-auth-layout/guests/login-computer/position/$positionId/': {
       id: '/_non-auth-layout/guests/login-computer/position/$positionId/'
       path: '/guests/login-computer/position/$positionId'
@@ -708,7 +688,7 @@ interface NonAuthLayoutRouteChildren {
   NonAuthLayoutBillsDeletedIndexLazyRoute: typeof NonAuthLayoutBillsDeletedIndexLazyRoute
   NonAuthLayoutBranchesDeletedIndexLazyRoute: typeof NonAuthLayoutBranchesDeletedIndexLazyRoute
   NonAuthLayoutComputersDeletedIndexLazyRoute: typeof NonAuthLayoutComputersDeletedIndexLazyRoute
-  NonAuthLayoutGuestsBranchesIndexLazyRoute: typeof NonAuthLayoutGuestsBranchesIndexLazyRoute
+  NonAuthLayoutGuestComputersIndexLazyRoute: typeof NonAuthLayoutGuestComputersIndexLazyRoute
   NonAuthLayoutGuestsDeletedIndexLazyRoute: typeof NonAuthLayoutGuestsDeletedIndexLazyRoute
   NonAuthLayoutGuestsLoginComputerIndexLazyRoute: typeof NonAuthLayoutGuestsLoginComputerIndexLazyRoute
   NonAuthLayoutPeripheralsDeletedIndexLazyRoute: typeof NonAuthLayoutPeripheralsDeletedIndexLazyRoute
@@ -719,7 +699,6 @@ interface NonAuthLayoutRouteChildren {
   NonAuthLayoutStaffsDeletedIndexLazyRoute: typeof NonAuthLayoutStaffsDeletedIndexLazyRoute
   NonAuthLayoutUsageTrackingDeletedIndexLazyRoute: typeof NonAuthLayoutUsageTrackingDeletedIndexLazyRoute
   NonAuthLayoutUsersDeletedIndexLazyRoute: typeof NonAuthLayoutUsersDeletedIndexLazyRoute
-  NonAuthLayoutGuestsBranchesBranchIdComputersIndexLazyRoute: typeof NonAuthLayoutGuestsBranchesBranchIdComputersIndexLazyRoute
   NonAuthLayoutGuestsLoginComputerPositionPositionIdIndexLazyRoute: typeof NonAuthLayoutGuestsLoginComputerPositionPositionIdIndexLazyRoute
   NonAuthLayoutGuestsLoginComputerPositionPositionIdComputerIndexLazyRoute: typeof NonAuthLayoutGuestsLoginComputerPositionPositionIdComputerIndexLazyRoute
 }
@@ -747,8 +726,8 @@ const NonAuthLayoutRouteChildren: NonAuthLayoutRouteChildren = {
     NonAuthLayoutBranchesDeletedIndexLazyRoute,
   NonAuthLayoutComputersDeletedIndexLazyRoute:
     NonAuthLayoutComputersDeletedIndexLazyRoute,
-  NonAuthLayoutGuestsBranchesIndexLazyRoute:
-    NonAuthLayoutGuestsBranchesIndexLazyRoute,
+  NonAuthLayoutGuestComputersIndexLazyRoute:
+    NonAuthLayoutGuestComputersIndexLazyRoute,
   NonAuthLayoutGuestsDeletedIndexLazyRoute:
     NonAuthLayoutGuestsDeletedIndexLazyRoute,
   NonAuthLayoutGuestsLoginComputerIndexLazyRoute:
@@ -769,8 +748,6 @@ const NonAuthLayoutRouteChildren: NonAuthLayoutRouteChildren = {
     NonAuthLayoutUsageTrackingDeletedIndexLazyRoute,
   NonAuthLayoutUsersDeletedIndexLazyRoute:
     NonAuthLayoutUsersDeletedIndexLazyRoute,
-  NonAuthLayoutGuestsBranchesBranchIdComputersIndexLazyRoute:
-    NonAuthLayoutGuestsBranchesBranchIdComputersIndexLazyRoute,
   NonAuthLayoutGuestsLoginComputerPositionPositionIdIndexLazyRoute:
     NonAuthLayoutGuestsLoginComputerPositionPositionIdIndexLazyRoute,
   NonAuthLayoutGuestsLoginComputerPositionPositionIdComputerIndexLazyRoute:
@@ -801,7 +778,7 @@ export interface FileRoutesByFullPath {
   '/bills/deleted': typeof NonAuthLayoutBillsDeletedIndexLazyRoute
   '/branches/deleted': typeof NonAuthLayoutBranchesDeletedIndexLazyRoute
   '/computers/deleted': typeof NonAuthLayoutComputersDeletedIndexLazyRoute
-  '/guests/branches': typeof NonAuthLayoutGuestsBranchesIndexLazyRoute
+  '/guest/computers': typeof NonAuthLayoutGuestComputersIndexLazyRoute
   '/guests/deleted': typeof NonAuthLayoutGuestsDeletedIndexLazyRoute
   '/guests/login-computer': typeof NonAuthLayoutGuestsLoginComputerIndexLazyRoute
   '/peripherals/deleted': typeof NonAuthLayoutPeripheralsDeletedIndexLazyRoute
@@ -812,7 +789,6 @@ export interface FileRoutesByFullPath {
   '/staffs/deleted': typeof NonAuthLayoutStaffsDeletedIndexLazyRoute
   '/usage-tracking/deleted': typeof NonAuthLayoutUsageTrackingDeletedIndexLazyRoute
   '/users/deleted': typeof NonAuthLayoutUsersDeletedIndexLazyRoute
-  '/guests/branches/$branchId/computers': typeof NonAuthLayoutGuestsBranchesBranchIdComputersIndexLazyRoute
   '/guests/login-computer/position/$positionId': typeof NonAuthLayoutGuestsLoginComputerPositionPositionIdIndexLazyRoute
   '/guests/login-computer/position/$positionId/computer': typeof NonAuthLayoutGuestsLoginComputerPositionPositionIdComputerIndexLazyRoute
 }
@@ -836,7 +812,7 @@ export interface FileRoutesByTo {
   '/bills/deleted': typeof NonAuthLayoutBillsDeletedIndexLazyRoute
   '/branches/deleted': typeof NonAuthLayoutBranchesDeletedIndexLazyRoute
   '/computers/deleted': typeof NonAuthLayoutComputersDeletedIndexLazyRoute
-  '/guests/branches': typeof NonAuthLayoutGuestsBranchesIndexLazyRoute
+  '/guest/computers': typeof NonAuthLayoutGuestComputersIndexLazyRoute
   '/guests/deleted': typeof NonAuthLayoutGuestsDeletedIndexLazyRoute
   '/guests/login-computer': typeof NonAuthLayoutGuestsLoginComputerIndexLazyRoute
   '/peripherals/deleted': typeof NonAuthLayoutPeripheralsDeletedIndexLazyRoute
@@ -847,7 +823,6 @@ export interface FileRoutesByTo {
   '/staffs/deleted': typeof NonAuthLayoutStaffsDeletedIndexLazyRoute
   '/usage-tracking/deleted': typeof NonAuthLayoutUsageTrackingDeletedIndexLazyRoute
   '/users/deleted': typeof NonAuthLayoutUsersDeletedIndexLazyRoute
-  '/guests/branches/$branchId/computers': typeof NonAuthLayoutGuestsBranchesBranchIdComputersIndexLazyRoute
   '/guests/login-computer/position/$positionId': typeof NonAuthLayoutGuestsLoginComputerPositionPositionIdIndexLazyRoute
   '/guests/login-computer/position/$positionId/computer': typeof NonAuthLayoutGuestsLoginComputerPositionPositionIdComputerIndexLazyRoute
 }
@@ -873,7 +848,7 @@ export interface FileRoutesById {
   '/_non-auth-layout/bills/deleted/': typeof NonAuthLayoutBillsDeletedIndexLazyRoute
   '/_non-auth-layout/branches/deleted/': typeof NonAuthLayoutBranchesDeletedIndexLazyRoute
   '/_non-auth-layout/computers/deleted/': typeof NonAuthLayoutComputersDeletedIndexLazyRoute
-  '/_non-auth-layout/guests/branches/': typeof NonAuthLayoutGuestsBranchesIndexLazyRoute
+  '/_non-auth-layout/guest/computers/': typeof NonAuthLayoutGuestComputersIndexLazyRoute
   '/_non-auth-layout/guests/deleted/': typeof NonAuthLayoutGuestsDeletedIndexLazyRoute
   '/_non-auth-layout/guests/login-computer/': typeof NonAuthLayoutGuestsLoginComputerIndexLazyRoute
   '/_non-auth-layout/peripherals/deleted/': typeof NonAuthLayoutPeripheralsDeletedIndexLazyRoute
@@ -884,7 +859,6 @@ export interface FileRoutesById {
   '/_non-auth-layout/staffs/deleted/': typeof NonAuthLayoutStaffsDeletedIndexLazyRoute
   '/_non-auth-layout/usage-tracking/deleted/': typeof NonAuthLayoutUsageTrackingDeletedIndexLazyRoute
   '/_non-auth-layout/users/deleted/': typeof NonAuthLayoutUsersDeletedIndexLazyRoute
-  '/_non-auth-layout/guests/branches/$branchId/computers/': typeof NonAuthLayoutGuestsBranchesBranchIdComputersIndexLazyRoute
   '/_non-auth-layout/guests/login-computer/position/$positionId/': typeof NonAuthLayoutGuestsLoginComputerPositionPositionIdIndexLazyRoute
   '/_non-auth-layout/guests/login-computer/position/$positionId/computer/': typeof NonAuthLayoutGuestsLoginComputerPositionPositionIdComputerIndexLazyRoute
 }
@@ -911,7 +885,7 @@ export interface FileRouteTypes {
     | '/bills/deleted'
     | '/branches/deleted'
     | '/computers/deleted'
-    | '/guests/branches'
+    | '/guest/computers'
     | '/guests/deleted'
     | '/guests/login-computer'
     | '/peripherals/deleted'
@@ -922,7 +896,6 @@ export interface FileRouteTypes {
     | '/staffs/deleted'
     | '/usage-tracking/deleted'
     | '/users/deleted'
-    | '/guests/branches/$branchId/computers'
     | '/guests/login-computer/position/$positionId'
     | '/guests/login-computer/position/$positionId/computer'
   fileRoutesByTo: FileRoutesByTo
@@ -945,7 +918,7 @@ export interface FileRouteTypes {
     | '/bills/deleted'
     | '/branches/deleted'
     | '/computers/deleted'
-    | '/guests/branches'
+    | '/guest/computers'
     | '/guests/deleted'
     | '/guests/login-computer'
     | '/peripherals/deleted'
@@ -956,7 +929,6 @@ export interface FileRouteTypes {
     | '/staffs/deleted'
     | '/usage-tracking/deleted'
     | '/users/deleted'
-    | '/guests/branches/$branchId/computers'
     | '/guests/login-computer/position/$positionId'
     | '/guests/login-computer/position/$positionId/computer'
   id:
@@ -980,7 +952,7 @@ export interface FileRouteTypes {
     | '/_non-auth-layout/bills/deleted/'
     | '/_non-auth-layout/branches/deleted/'
     | '/_non-auth-layout/computers/deleted/'
-    | '/_non-auth-layout/guests/branches/'
+    | '/_non-auth-layout/guest/computers/'
     | '/_non-auth-layout/guests/deleted/'
     | '/_non-auth-layout/guests/login-computer/'
     | '/_non-auth-layout/peripherals/deleted/'
@@ -991,7 +963,6 @@ export interface FileRouteTypes {
     | '/_non-auth-layout/staffs/deleted/'
     | '/_non-auth-layout/usage-tracking/deleted/'
     | '/_non-auth-layout/users/deleted/'
-    | '/_non-auth-layout/guests/branches/$branchId/computers/'
     | '/_non-auth-layout/guests/login-computer/position/$positionId/'
     | '/_non-auth-layout/guests/login-computer/position/$positionId/computer/'
   fileRoutesById: FileRoutesById
@@ -1043,7 +1014,7 @@ export const routeTree = rootRoute
         "/_non-auth-layout/bills/deleted/",
         "/_non-auth-layout/branches/deleted/",
         "/_non-auth-layout/computers/deleted/",
-        "/_non-auth-layout/guests/branches/",
+        "/_non-auth-layout/guest/computers/",
         "/_non-auth-layout/guests/deleted/",
         "/_non-auth-layout/guests/login-computer/",
         "/_non-auth-layout/peripherals/deleted/",
@@ -1054,7 +1025,6 @@ export const routeTree = rootRoute
         "/_non-auth-layout/staffs/deleted/",
         "/_non-auth-layout/usage-tracking/deleted/",
         "/_non-auth-layout/users/deleted/",
-        "/_non-auth-layout/guests/branches/$branchId/computers/",
         "/_non-auth-layout/guests/login-computer/position/$positionId/",
         "/_non-auth-layout/guests/login-computer/position/$positionId/computer/"
       ]
@@ -1129,8 +1099,8 @@ export const routeTree = rootRoute
       "filePath": "_non-auth-layout/computers/deleted/index.lazy.tsx",
       "parent": "/_non-auth-layout"
     },
-    "/_non-auth-layout/guests/branches/": {
-      "filePath": "_non-auth-layout/guests/branches/index.lazy.tsx",
+    "/_non-auth-layout/guest/computers/": {
+      "filePath": "_non-auth-layout/guest/computers/index.lazy.tsx",
       "parent": "/_non-auth-layout"
     },
     "/_non-auth-layout/guests/deleted/": {
@@ -1171,10 +1141,6 @@ export const routeTree = rootRoute
     },
     "/_non-auth-layout/users/deleted/": {
       "filePath": "_non-auth-layout/users/deleted/index.lazy.tsx",
-      "parent": "/_non-auth-layout"
-    },
-    "/_non-auth-layout/guests/branches/$branchId/computers/": {
-      "filePath": "_non-auth-layout/guests/branches/$branchId/computers/index.lazy.tsx",
       "parent": "/_non-auth-layout"
     },
     "/_non-auth-layout/guests/login-computer/position/$positionId/": {

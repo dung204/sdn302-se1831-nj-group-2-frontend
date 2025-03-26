@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { Clock, LogOut, Plus } from 'lucide-react';
+import { CheckCircle, Clock, Clock3, LogOut, Minus, Plus, ShoppingCart, Trash } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -9,7 +9,9 @@ import { z } from 'zod';
 
 import { useAuth } from '@/common/hooks';
 import type { CreateBillSchema } from '@/common/types/api/bill/create-bill.type';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +28,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -33,6 +36,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { billHttpClient, computerHttpClient, positionHttpClient } from '@/lib/http';
 
 // Time selection form schema
@@ -49,6 +54,66 @@ const PRICE_PER_HOUR = 15000; // 15,000 VND per hour
 const formatCurrency = (amount: number) => {
   return `$${amount.toFixed(2)}`;
 };
+
+// Mock service data
+const mockServices = [
+  { id: '1', name: 'Instant Noodles', price: 15, category: 'Food' },
+  { id: '2', name: 'Soft Drink', price: 10, category: 'Drink' },
+  { id: '3', name: 'Coffee', price: 20, category: 'Drink' },
+  { id: '4', name: 'Sandwich', price: 25, category: 'Food' },
+  { id: '5', name: 'Chips', price: 12, category: 'Food' },
+  { id: '6', name: 'Energy Drink', price: 30, category: 'Drink' },
+  { id: '7', name: 'Chocolate Bar', price: 15, category: 'Food' },
+  { id: '8', name: 'Ice Cream', price: 18, category: 'Food' },
+  { id: '9', name: 'Water Bottle', price: 8, category: 'Drink' },
+  { id: '10', name: 'Pizza Slice', price: 35, category: 'Food' },
+];
+
+// Selected service item type
+type SelectedService = {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+};
+
+// Define type for ordered service with status
+type OrderedService = {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  status: 'pending' | 'preparing' | 'delivered' | 'cancelled';
+  orderedAt: Date;
+};
+
+// Mock ordered services data for demonstration
+const mockOrderedServices: OrderedService[] = [
+  {
+    id: '1',
+    name: 'Coffee',
+    price: 20,
+    quantity: 1,
+    status: 'delivered',
+    orderedAt: new Date(Date.now() - 35 * 60000), // 35 minutes ago
+  },
+  {
+    id: '2',
+    name: 'Sandwich',
+    price: 25,
+    quantity: 2,
+    status: 'preparing',
+    orderedAt: new Date(Date.now() - 10 * 60000), // 10 minutes ago
+  },
+  {
+    id: '3',
+    name: 'Water Bottle',
+    price: 8,
+    quantity: 1,
+    status: 'pending',
+    orderedAt: new Date(Date.now() - 2 * 60000), // 2 minutes ago
+  },
+];
 
 export function GuestComputerHomePage() {
   const { positionId } = useParams({
@@ -67,6 +132,10 @@ export function GuestComputerHomePage() {
     seconds: number;
   }>({ hours: 0, minutes: 0, seconds: 0 });
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [showOrderDialog, setShowOrderDialog] = useState(false);
+  const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
+  const [orderedServices, setOrderedServices] = useState<OrderedService[]>(mockOrderedServices);
+  const [activeTab, setActiveTab] = useState('order');
 
   // Get position data
   const { data: positionData, isLoading: isPositionLoading } = useQuery({
@@ -290,6 +359,117 @@ export function GuestComputerHomePage() {
     }
   };
 
+  // Handle order service
+  const handleOrderService = (service: (typeof mockServices)[0]) => {
+    const existingServiceIndex = selectedServices.findIndex((item) => item.id === service.id);
+
+    if (existingServiceIndex >= 0) {
+      // Service already exists in the order, increase quantity
+      const updatedServices = [...selectedServices];
+      updatedServices[existingServiceIndex].quantity += 1;
+      setSelectedServices(updatedServices);
+    } else {
+      // Service not in the order, add it
+      setSelectedServices([
+        ...selectedServices,
+        {
+          id: service.id,
+          name: service.name,
+          price: service.price,
+          quantity: 1,
+        },
+      ]);
+    }
+  };
+
+  // Handle quantity change
+  const handleQuantityChange = (serviceId: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      // Remove the service if quantity is zero or negative
+      setSelectedServices(selectedServices.filter((service) => service.id !== serviceId));
+    } else {
+      // Update the quantity
+      setSelectedServices(
+        selectedServices.map((service) =>
+          service.id === serviceId ? { ...service, quantity: newQuantity } : service,
+        ),
+      );
+    }
+  };
+
+  // Handle remove service from order
+  const handleRemoveService = (serviceId: string) => {
+    setSelectedServices(selectedServices.filter((service) => service.id !== serviceId));
+  };
+
+  // Calculate total order amount
+  const calculateTotal = () => {
+    return selectedServices.reduce((total, service) => total + service.price * service.quantity, 0);
+  };
+
+  // Handle confirm order
+  const handleConfirmOrder = () => {
+    if (selectedServices.length === 0) {
+      toast.error('Please add at least one item to your order');
+      return;
+    }
+
+    // Create new ordered services with pending status
+    const newOrderedServices = selectedServices.map((service) => ({
+      ...service,
+      status: 'pending' as const,
+      orderedAt: new Date(),
+    }));
+
+    // Add to ordered services list
+    setOrderedServices([...newOrderedServices, ...orderedServices]);
+
+    toast.success(`Order placed successfully! Total: ${formatCurrency(calculateTotal())}`);
+
+    // Reset the order
+    setSelectedServices([]);
+
+    // Switch to the order history tab to show the newly placed order
+    setActiveTab('history');
+  };
+
+  // Function to get appropriate status badge
+  const getStatusBadge = (status: OrderedService['status']) => {
+    switch (status) {
+      case 'pending':
+        return (
+          <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+            Pending
+          </Badge>
+        );
+      case 'preparing':
+        return (
+          <Badge variant="outline" className="bg-blue-100 text-blue-800">
+            Preparing
+          </Badge>
+        );
+      case 'delivered':
+        return (
+          <Badge variant="outline" className="bg-green-100 text-green-800">
+            Delivered
+          </Badge>
+        );
+      case 'cancelled':
+        return (
+          <Badge variant="outline" className="bg-red-100 text-red-800">
+            Cancelled
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Format date function
+  const formatOrderTime = (date: Date) => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   if (isPositionLoading || isComputerLoading) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
@@ -323,6 +503,9 @@ export function GuestComputerHomePage() {
           </p>
         </div>
         <div className="flex gap-4">
+          <Button onClick={() => setShowOrderDialog(true)} className="flex items-center gap-2">
+            <ShoppingCart className="size-4" /> Order Services
+          </Button>
           <Button onClick={() => setShowAddTimeDialog(true)} className="flex items-center gap-2">
             <Plus className="size-4" /> Add Time
           </Button>
@@ -472,6 +655,553 @@ export function GuestComputerHomePage() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Order Services Dialog */}
+      <Dialog open={showOrderDialog} onOpenChange={setShowOrderDialog}>
+        <DialogContent className="w-full max-w-[80vw]">
+          <DialogHeader>
+            <DialogTitle>Order Services</DialogTitle>
+            <DialogDescription>
+              Place your order or check the status of your previous orders.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="order">New Order</TabsTrigger>
+              <TabsTrigger value="history">Order History</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="order" className="mt-4">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {/* Services selection panel (left side) */}
+                <div>
+                  <h3 className="mb-3 text-lg font-semibold">Available Services</h3>
+                  <Card>
+                    <CardContent className="p-4">
+                      <ScrollArea className="h-[350px] pr-4">
+                        {/* Group services by category */}
+                        {['Food', 'Drink'].map((category) => (
+                          <div key={category} className="mb-4">
+                            <h4 className="mb-2 font-semibold">{category}</h4>
+                            <div className="grid grid-cols-1 gap-2">
+                              {mockServices
+                                .filter((service) => service.category === category)
+                                .map((service) => (
+                                  <Card
+                                    key={service.id}
+                                    className="cursor-pointer hover:bg-accent"
+                                    onClick={() => handleOrderService(service)}
+                                  >
+                                    <CardContent className="flex items-center justify-between p-3">
+                                      <div>{service.name}</div>
+                                      <div>{formatCurrency(service.price)}</div>
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                            </div>
+                          </div>
+                        ))}
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Invoice panel (right side) */}
+                <div>
+                  <h3 className="mb-3 text-lg font-semibold">Your Order</h3>
+                  <Card>
+                    <CardContent className="p-4">
+                      {selectedServices.length === 0 ? (
+                        <div className="py-8 text-center text-muted-foreground">
+                          No items added to your order yet
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="mb-2 grid grid-cols-12 font-medium">
+                            <div className="col-span-5">Item</div>
+                            <div className="col-span-2 text-right">Price</div>
+                            <div className="col-span-3 text-center">Qty</div>
+                            <div className="col-span-2 text-right">Total</div>
+                          </div>
+                          <ScrollArea className="h-[300px] pr-4">
+                            {selectedServices.map((service) => (
+                              <div key={service.id} className="grid grid-cols-12 items-center py-2">
+                                <div className="col-span-5 font-medium">{service.name}</div>
+                                <div className="col-span-2 text-right">
+                                  {formatCurrency(service.price)}
+                                </div>
+                                <div className="col-span-3 flex items-center justify-center space-x-1">
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    className="size-7"
+                                    onClick={() =>
+                                      handleQuantityChange(service.id, service.quantity - 1)
+                                    }
+                                  >
+                                    <Minus className="size-3" />
+                                  </Button>
+                                  <span className="w-6 text-center">{service.quantity}</span>
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    className="size-7"
+                                    onClick={() =>
+                                      handleQuantityChange(service.id, service.quantity + 1)
+                                    }
+                                  >
+                                    <Plus className="size-3" />
+                                  </Button>
+                                </div>
+                                <div className="col-span-1 text-right">
+                                  {formatCurrency(service.price * service.quantity)}
+                                </div>
+                                <div className="col-span-1 text-right">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="size-7"
+                                    onClick={() => handleRemoveService(service.id)}
+                                  >
+                                    <Trash className="size-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </ScrollArea>
+                          <Separator className="my-3" />
+                          <div className="flex justify-between">
+                            <div className="text-lg font-bold">Total:</div>
+                            <div className="text-lg font-bold">
+                              {formatCurrency(calculateTotal())}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              <DialogFooter className="mt-6 gap-2 sm:gap-0">
+                <Button type="button" variant="outline" onClick={() => setShowOrderDialog(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleConfirmOrder}
+                  disabled={selectedServices.length === 0}
+                >
+                  Confirm Order
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+
+            <TabsContent value="history" className="mt-4">
+              <h3 className="mb-3 text-lg font-semibold">Your Order History</h3>
+              <Card>
+                <CardContent className="p-4">
+                  {orderedServices.length === 0 ? (
+                    <div className="py-8 text-center text-muted-foreground">
+                      You haven't placed any orders yet
+                    </div>
+                  ) : (
+                    <ScrollArea className="h-[400px] pr-4">
+                      {orderedServices
+                        .sort((a, b) => b.orderedAt.getTime() - a.orderedAt.getTime()) // Sort by most recent
+                        .map((service, index) => (
+                          <div
+                            key={`${service.id}-${index}`}
+                            className="mb-4 rounded-md border p-3"
+                          >
+                            <div className="mb-2 flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{service.name}</span>
+                                {getStatusBadge(service.status)}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                Ordered at {formatOrderTime(service.orderedAt)}
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-3 text-sm">
+                              <div>
+                                Quantity: <span className="font-medium">{service.quantity}</span>
+                              </div>
+                              <div>
+                                Price:{' '}
+                                <span className="font-medium">{formatCurrency(service.price)}</span>
+                              </div>
+                              <div className="text-right">
+                                Total:{' '}
+                                <span className="font-medium">
+                                  {formatCurrency(service.price * service.quantity)}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="mt-2 flex items-center text-sm text-muted-foreground">
+                              {service.status === 'pending' && (
+                                <div className="flex items-center gap-1">
+                                  <Clock3 className="size-3" /> Estimated time: 10-15 minutes
+                                </div>
+                              )}
+                              {service.status === 'preparing' && (
+                                <div className="flex items-center gap-1">
+                                  <Clock3 className="size-3" /> Almost ready, will be delivered soon
+                                </div>
+                              )}
+                              {service.status === 'delivered' && (
+                                <div className="flex items-center gap-1">
+                                  <CheckCircle className="size-3 text-green-500" /> Delivered
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                    </ScrollArea>
+                  )}
+                </CardContent>
+              </Card>
+
+              <DialogFooter className="mt-6">
+                <Button type="button" variant="outline" onClick={() => setShowOrderDialog(false)}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      {/* Initial time selection dialog */}
+      <Dialog open={showTimeSelectionDialog} onOpenChange={() => {}}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Select Play Time</DialogTitle>
+            <DialogDescription>
+              Choose how long you want to use this computer. The cost is{' '}
+              {formatCurrency(computerPrice)} per hour.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...timeSelectionForm}>
+            <form
+              onSubmit={timeSelectionForm.handleSubmit(handleTimeSelection)}
+              className="space-y-4"
+            >
+              <FormField
+                control={timeSelectionForm.control}
+                name="hours"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel required>Hours</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select hours" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {[1, 2, 3, 4, 5, 6].map((hour) => (
+                          <SelectItem key={hour} value={String(hour)}>
+                            {hour} hour{hour > 1 ? 's' : ''} ({formatCurrency(hour * computerPrice)}
+                            )
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormItem>
+                <FormLabel>Your Balance</FormLabel>
+                <div className="text-lg font-medium">{formatCurrency(user?.balance || 0)}</div>
+              </FormItem>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate({ to: '/guests/login-computer' })}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isCreatingBill}>
+                  Confirm Payment
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add time dialog */}
+      <Dialog open={showAddTimeDialog} onOpenChange={setShowAddTimeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add More Time</DialogTitle>
+            <DialogDescription>
+              Add more time to your current session. The cost is {formatCurrency(computerPrice)} per
+              hour.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...addTimeForm}>
+            <form onSubmit={addTimeForm.handleSubmit(handleAddTime)} className="space-y-4">
+              <FormField
+                control={addTimeForm.control}
+                name="hours"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel required>Additional Hours</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select hours" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {[1, 2, 3, 4, 5, 6].map((hour) => (
+                          <SelectItem key={hour} value={String(hour)}>
+                            {hour} hour{hour > 1 ? 's' : ''} ({formatCurrency(hour * computerPrice)}
+                            )
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormItem>
+                <FormLabel>Your Balance</FormLabel>
+                <div className="text-lg font-medium">{formatCurrency(user?.balance || 0)}</div>
+              </FormItem>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setShowAddTimeDialog(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Add Time</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Order Services Dialog */}
+      <Dialog open={showOrderDialog} onOpenChange={setShowOrderDialog}>
+        <DialogContent className="w-full max-w-[80vw]">
+          <DialogHeader>
+            <DialogTitle>Order Services</DialogTitle>
+            <DialogDescription>
+              Place your order or check the status of your previous orders.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="order">New Order</TabsTrigger>
+              <TabsTrigger value="history">Order History</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="order" className="mt-4">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {/* Services selection panel (left side) */}
+                <div>
+                  <h3 className="mb-3 text-lg font-semibold">Available Services</h3>
+                  <Card>
+                    <CardContent className="p-4">
+                      <ScrollArea className="h-[350px] pr-4">
+                        {/* Group services by category */}
+                        {['Food', 'Drink'].map((category) => (
+                          <div key={category} className="mb-4">
+                            <h4 className="mb-2 font-semibold">{category}</h4>
+                            <div className="grid grid-cols-1 gap-2">
+                              {mockServices
+                                .filter((service) => service.category === category)
+                                .map((service) => (
+                                  <Card
+                                    key={service.id}
+                                    className="cursor-pointer hover:bg-accent"
+                                    onClick={() => handleOrderService(service)}
+                                  >
+                                    <CardContent className="flex items-center justify-between p-3">
+                                      <div>{service.name}</div>
+                                      <div>{formatCurrency(service.price)}</div>
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                            </div>
+                          </div>
+                        ))}
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Invoice panel (right side) */}
+                <div>
+                  <h3 className="mb-3 text-lg font-semibold">Your Order</h3>
+                  <Card>
+                    <CardContent className="p-4">
+                      {selectedServices.length === 0 ? (
+                        <div className="py-8 text-center text-muted-foreground">
+                          No items added to your order yet
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="mb-2 grid grid-cols-12 font-medium">
+                            <div className="col-span-5">Item</div>
+                            <div className="col-span-2 text-right">Price</div>
+                            <div className="col-span-3 text-center">Qty</div>
+                            <div className="col-span-2 text-right">Total</div>
+                          </div>
+                          <ScrollArea className="h-[300px] pr-4">
+                            {selectedServices.map((service) => (
+                              <div key={service.id} className="grid grid-cols-12 items-center py-2">
+                                <div className="col-span-5 font-medium">{service.name}</div>
+                                <div className="col-span-2 text-right">
+                                  {formatCurrency(service.price)}
+                                </div>
+                                <div className="col-span-3 flex items-center justify-center space-x-1">
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    className="size-7"
+                                    onClick={() =>
+                                      handleQuantityChange(service.id, service.quantity - 1)
+                                    }
+                                  >
+                                    <Minus className="size-3" />
+                                  </Button>
+                                  <span className="w-6 text-center">{service.quantity}</span>
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    className="size-7"
+                                    onClick={() =>
+                                      handleQuantityChange(service.id, service.quantity + 1)
+                                    }
+                                  >
+                                    <Plus className="size-3" />
+                                  </Button>
+                                </div>
+                                <div className="col-span-1 text-right">
+                                  {formatCurrency(service.price * service.quantity)}
+                                </div>
+                                <div className="col-span-1 text-right">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="size-7"
+                                    onClick={() => handleRemoveService(service.id)}
+                                  >
+                                    <Trash className="size-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </ScrollArea>
+                          <Separator className="my-3" />
+                          <div className="flex justify-between">
+                            <div className="text-lg font-bold">Total:</div>
+                            <div className="text-lg font-bold">
+                              {formatCurrency(calculateTotal())}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              <DialogFooter className="mt-6 gap-2 sm:gap-0">
+                <Button type="button" variant="outline" onClick={() => setShowOrderDialog(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleConfirmOrder}
+                  disabled={selectedServices.length === 0}
+                >
+                  Confirm Order
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+
+            <TabsContent value="history" className="mt-4">
+              <h3 className="mb-3 text-lg font-semibold">Your Order History</h3>
+              <Card>
+                <CardContent className="p-4">
+                  {orderedServices.length === 0 ? (
+                    <div className="py-8 text-center text-muted-foreground">
+                      You haven't placed any orders yet
+                    </div>
+                  ) : (
+                    <ScrollArea className="h-[400px] pr-4">
+                      {orderedServices
+                        .sort((a, b) => b.orderedAt.getTime() - a.orderedAt.getTime()) // Sort by most recent
+                        .map((service, index) => (
+                          <div
+                            key={`${service.id}-${index}`}
+                            className="mb-4 rounded-md border p-3"
+                          >
+                            <div className="mb-2 flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{service.name}</span>
+                                {getStatusBadge(service.status)}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                Ordered at {formatOrderTime(service.orderedAt)}
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-3 text-sm">
+                              <div>
+                                Quantity: <span className="font-medium">{service.quantity}</span>
+                              </div>
+                              <div>
+                                Price:{' '}
+                                <span className="font-medium">{formatCurrency(service.price)}</span>
+                              </div>
+                              <div className="text-right">
+                                Total:{' '}
+                                <span className="font-medium">
+                                  {formatCurrency(service.price * service.quantity)}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="mt-2 flex items-center text-sm text-muted-foreground">
+                              {service.status === 'pending' && (
+                                <div className="flex items-center gap-1">
+                                  <Clock3 className="size-3" /> Estimated time: 10-15 minutes
+                                </div>
+                              )}
+                              {service.status === 'preparing' && (
+                                <div className="flex items-center gap-1">
+                                  <Clock3 className="size-3" /> Almost ready, will be delivered soon
+                                </div>
+                              )}
+                              {service.status === 'delivered' && (
+                                <div className="flex items-center gap-1">
+                                  <CheckCircle className="size-3 text-green-500" /> Delivered
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                    </ScrollArea>
+                  )}
+                </CardContent>
+              </Card>
+
+              <DialogFooter className="mt-6">
+                <Button type="button" variant="outline" onClick={() => setShowOrderDialog(false)}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </div>

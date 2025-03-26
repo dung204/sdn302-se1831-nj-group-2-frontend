@@ -14,9 +14,13 @@ export function BranchProvider({ children }: PropsWithChildren) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [branch, setBranch] = useState<Branch | null>(null);
-  const [branchId, setBranchId] = useState<string>(() => localStorageService.get('branchId', ''));
+  const [branchId, setBranchId] = useState<string>(localStorageService.get('branchId', ''));
 
-  const { data: res, isLoading } = useQuery({
+  const {
+    data: res,
+    isLoading,
+    isFetched,
+  } = useQuery({
     queryKey: ['branches', 'single', { branchId }],
     queryFn: () => branchHttpClient.getBranchById(branchId),
     enabled: branchId !== '',
@@ -27,17 +31,16 @@ export function BranchProvider({ children }: PropsWithChildren) {
       setBranch(res.data);
       if (res.data) {
         localStorageService.set(LocalStorageKey.BRANCH_ID, res.data.id);
-        navigate({ to: '/' });
       }
     }
   }, [res, isLoading]);
 
   useEffect(() => {
-    if (user?.role === Role.GUEST && !branch) {
+    if (isFetched && user?.role === Role.GUEST && !res?.data) {
       navigate({ to: '/guest/branches' });
       return;
     }
-  }, [branch, navigate, user]);
+  }, [user, isFetched, res]);
 
   return (
     <BranchContext.Provider value={{ branch, setBranch, setBranchId }}>

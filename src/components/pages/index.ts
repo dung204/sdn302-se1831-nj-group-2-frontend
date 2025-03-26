@@ -26,4 +26,4 @@ export * from './manage-deleted-usage-tracking.page';
 export * from './manage-users.page';
 export * from './manage-deleted-users.page';
 export * from './guest-branches.page';
-export * from './guest-branches-id-computers.page';
+export * from './guest-computers.page';

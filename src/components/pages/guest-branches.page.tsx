@@ -92,6 +92,7 @@ export function GuestBranchesPage() {
               onClick={() => {
                 if (selectedBranch?.id !== branch.id) {
                   setBranchId(branch.id);
+                  navigate({ to: '/' });
                 }
               }}
             >
