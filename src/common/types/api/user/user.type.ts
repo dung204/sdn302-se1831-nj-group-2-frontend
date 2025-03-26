@@ -10,7 +10,7 @@ export type User = BaseModel & {
   address: string | null;
   citizenNumber: string | null;
   phoneNumber: string | null;
-  availableTime: number | null;
+  balance: number | null;
 } & (
     | {
         role: Role.OWNER | Role.GUEST;
