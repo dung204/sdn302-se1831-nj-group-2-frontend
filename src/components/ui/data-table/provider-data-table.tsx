@@ -36,6 +36,7 @@ const providerDataTableColumns = [
 const filterRules: FilterRule<Provider>[] = [
   { field: 'name', type: 'text' },
   { field: 'createTimestamp', type: 'datetime', range: true },
+  { field: 'deleteTimestamp', type: 'datetime', range: true },
 ];
 
 interface ProviderDataTableProps
@@ -46,27 +47,16 @@ interface ProviderDataTableProps
 export function ProviderDataTable({
   renderColumns,
   filter,
-  data: _,
+  data,
   ...props
 }: ProviderDataTableProps) {
-  const mockData: Provider[] = [
-    {
-      id: '1',
-      name: 'PHONGVU',
-      description: 'Computer Parts',
-      createTimestamp: '2025-03-01T12:23:17Z',
-    },
-    { id: '2', name: 'HACOM', description: 'Gears', createTimestamp: '2025-03-12T11:34:25Z' },
-    { id: '3', name: 'TECHSTAR', description: 'Desks', createTimestamp: new Date().toISOString() },
-  ];
-
   return (
     <DataTable
       getRowId={(row) => row.id}
       columns={renderColumns ? renderColumns(providerDataTableColumns) : providerDataTableColumns}
       filterRules={filterRules}
       filter={filter}
-      data={mockData}
+      data={data}
       {...props}
     />
   );

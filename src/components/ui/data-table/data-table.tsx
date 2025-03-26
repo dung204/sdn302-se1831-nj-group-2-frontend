@@ -307,8 +307,12 @@ function FilterDialog<TData>({
   }, [table]);
 
   const countEnabledFilters = useMemo(() => {
-    return new Set(Object.keys(filter ?? {}).map((key) => key.replaceAll(/^(from|to)/g, ''))).size;
-  }, [filter]);
+    return new Set(
+      Object.keys(filter ?? {})
+        .filter((field) => !!headerTitles.find((header) => header.field === field))
+        .map((key) => key.replaceAll(/^(from|to)/g, '')),
+    ).size;
+  }, [filter, headerTitles]);
 
   const handleApplyFilter = () => {
     navigate({ to: location.pathname, search: { ...filterState } });

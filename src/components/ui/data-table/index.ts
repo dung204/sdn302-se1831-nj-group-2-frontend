@@ -7,3 +7,4 @@ export * from './branch-data-table';
 export * from './peripheral-data-table';
 export * from './service-data-table';
 export * from './provider-data-table';
+export * from './computer-data-table-guest';

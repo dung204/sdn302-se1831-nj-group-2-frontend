@@ -1,24 +1,23 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, getRouteApi, useNavigate } from '@tanstack/react-router';
-import { type RowSelectionState } from '@tanstack/react-table';
+import type { RowSelectionState } from '@tanstack/react-table';
 import { Edit, Ellipsis, EyeIcon, Plus, Trash2 } from 'lucide-react';
-import { type ComponentProps, useMemo, useState } from 'react';
+import { type ComponentProps, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/common/hooks';
-import type { SuccessResponse } from '@/common/types';
-import type { UpdateProviderSchema } from '@/common/types/api/provider';
+import { type SuccessResponse } from '@/common/types';
 import {
-  type CreateServiceSchema,
-  type Service,
-  type UpdateServiceSchema,
-  createServiceSchema,
-  serviceSearchParamsSchema,
-  updateServiceSchema,
-} from '@/common/types/api/service';
-import { Role, type User } from '@/common/types/api/user';
+  type CreateProviderSchema,
+  type Provider,
+  type UpdateProviderSchema,
+  createProviderSchema,
+  providerSearchParamsSchema,
+  updateProviderSchema,
+} from '@/common/types/api/provider';
+import { Role } from '@/common/types/api/user';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,31 +52,40 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { branchHttpClient, providerHttpClient, serviceCategoryHttpClient } from '@/lib/http';
+import { providerHttpClient } from '@/lib/http';
 
 const route = getRouteApi('/_non-auth-layout/providers/');
 
 export function ManageProvidersPage() {
-  const searchParams = serviceSearchParamsSchema.parse(route.useSearch());
+  const searchParams = providerSearchParamsSchema.parse(route.useSearch());
   const { user } = useAuth();
   const navigate = useNavigate();
+
   const { data: res, isLoading } = useQuery({
     queryKey: ['providers', 'all', searchParams],
-    queryFn: async () => providerHttpClient.getAllProviders(searchParams),
+    queryFn: () => providerHttpClient.getAllProviders(searchParams),
   });
 
   const [providersToDelete, setProvidersToDelete] = useState<RowSelectionState>({});
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [providerToUpdate, setProviderToUpdate] = useState<Service | null>(null);
+  const [providerToUpdate, setProviderToUpdate] = useState<Provider | null>(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (user?.role === Role.OWNER) {
+      document.title = 'Existing providers | Internet Cafe Management';
+    }
+  }, [user]);
 
   if (!user) {
     return <Navigate to="/login" />;
   }
-  if (![Role.OWNER, Role.BRANCH_ADMIN].includes(user.role)) {
+
+  if (user.role !== Role.OWNER) {
     return <Navigate to="/" />;
   }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-end gap-4">
@@ -99,7 +107,6 @@ export function ManageProvidersPage() {
         pagination={res?.meta.pagination}
         sorting={res?.meta.sorting}
         filter={res?.meta.filter}
-        enableRowSelection={() => true}
         onRowSelectionChange={setProvidersToDelete}
         state={{
           rowSelection: providersToDelete,
@@ -132,79 +139,81 @@ export function ManageProvidersPage() {
           {
             id: 'actions',
             header: '',
-            cell: ({ row }) => (
-              <DropdownMenu>
-                <DropdownMenuTrigger className="flex size-full items-center justify-center">
-                  <Ellipsis className="size-6" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={(e) => e.stopPropagation()}
-                    onSelect={() => {
-                      setProviderToUpdate(null);
-                      setIsUpdateDialogOpen(true);
-                    }}
-                  >
-                    <Edit className="size-4" /> Edit
-                  </DropdownMenuItem>
-                  {Object.keys(providersToDelete).length === 0 && (
+            cell: ({ row }) => {
+              return (
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="flex size-full items-center justify-center">
+                    <Ellipsis className="size-6" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
                     <DropdownMenuItem
-                      className="text-danger focus:bg-danger focus:text-danger-foreground"
                       onClick={(e) => e.stopPropagation()}
                       onSelect={() => {
-                        setProvidersToDelete({ [row.original.id]: true });
-                        setIsDeleteDialogOpen(true);
+                        setProviderToUpdate(row.original);
+                        setIsUpdateDialogOpen(true);
                       }}
                     >
-                      <Trash2 className="size-4" /> Delete
+                      <Edit className="size-4" /> Edit
                     </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ),
+                    {Object.keys(providersToDelete).length === 0 && (
+                      <DropdownMenuItem
+                        className="text-danger focus:bg-danger focus:text-danger-foreground"
+                        onClick={(e) => e.stopPropagation()}
+                        onSelect={() => {
+                          setProvidersToDelete({ [row.original.id]: true });
+                          setIsDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="size-4" /> Delete
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            },
             enableSorting: false,
             enableHiding: false,
             enableResizing: false,
           },
         ]}
       />
-      <ServiceDeleteDialog
-        serviceIds={Object.keys(providersToDelete)}
+      <ProviderDeleteDialog
+        providerIds={Object.keys(providersToDelete)}
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         onDelete={() => setProvidersToDelete({})}
       />
-      <ServiceUpdateDialog
-        service={providerToUpdate!}
+      <ProviderUpdateDialog
+        provider={providerToUpdate!}
         open={isUpdateDialogOpen}
         onOpenChange={setIsUpdateDialogOpen}
       />
-      <ServiceCreateDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
+      <ProviderCreateDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
     </div>
   );
 }
 
-interface ServiceDeleteDialogProps extends ComponentProps<typeof AlertDialog> {
-  serviceIds: string[];
-  onDelete?: (deletedServiceIds: string[]) => void;
+interface ProviderDeleteDialogProps extends ComponentProps<typeof AlertDialog> {
+  providerIds: string[];
+  onDelete?: (deletedProviderIds: string[]) => void;
 }
 
-function ServiceDeleteDialog({ serviceIds, onDelete, ...props }: ServiceDeleteDialogProps) {
-  const searchParams = serviceSearchParamsSchema.parse(route.useSearch());
+function ProviderDeleteDialog({ providerIds, onDelete, ...props }: ProviderDeleteDialogProps) {
+  const searchParams = providerSearchParamsSchema.parse(route.useSearch());
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { mutateAsync: triggerDeleteServices, isPending } = useMutation({
-    mutationFn: async (serviceIds: string[]) => {
+  const { mutateAsync: triggerDeleteProviders, isPending } = useMutation({
+    mutationFn: async (providerIds: string[]) => {
       const result = await Promise.allSettled(
-        serviceIds.map((id) => providerHttpClient.softDeleteProvider(id)),
+        providerIds.map((id) => providerHttpClient.softDeleteProvider(id)),
       );
       return Object.groupBy(result, (r) => r.status);
     },
     onSuccess: async ({ fulfilled, rejected }) => {
-      await queryClient.invalidateQueries({ queryKey: ['services', 'all'] });
-      const res = queryClient.getQueryData<SuccessResponse<Service[]>>([
-        'services',
+      await queryClient.invalidateQueries({ queryKey: ['providers', 'all'] });
+      const res = queryClient.getQueryData<SuccessResponse<Provider[]>>([
+        'providers',
         'all',
         searchParams,
       ]);
@@ -213,17 +222,17 @@ function ServiceDeleteDialog({ serviceIds, onDelete, ...props }: ServiceDeleteDi
         res!.meta.pagination.totalPage > 0
       ) {
         navigate({
-          to: '/services',
+          to: '/providers',
           search: { ...searchParams, page: res!.meta.pagination.totalPage },
         });
       }
       toast.info(`Result: ${fulfilled?.length || 0} deleted, ${rejected?.length || 0} failed`);
-      onDelete?.(serviceIds);
+      onDelete?.(providerIds);
     },
   });
 
   const handleDelete = async () => {
-    await triggerDeleteServices(serviceIds);
+    await triggerDeleteProviders(providerIds);
   };
 
   return (
@@ -231,9 +240,9 @@ function ServiceDeleteDialog({ serviceIds, onDelete, ...props }: ServiceDeleteDi
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {serviceIds.length === 1
+            {providerIds.length === 1
               ? 'Are you sure to delete this provider?'
-              : `Are you sure to delete ${serviceIds.length} selected provider?`}
+              : `Are you sure to delete ${providerIds.length} selected providers?`}
           </AlertDialogTitle>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -247,63 +256,38 @@ function ServiceDeleteDialog({ serviceIds, onDelete, ...props }: ServiceDeleteDi
   );
 }
 
-interface ServiceUpdateDialogProps extends ComponentProps<typeof Dialog> {
-  service: Service | null;
+interface ProviderUpdateDialogProps extends ComponentProps<typeof Dialog> {
+  provider: Provider | null;
 }
 
-function ServiceUpdateDialog({ service, onOpenChange, ...props }: ServiceUpdateDialogProps) {
-  const { user } = useAuth(); // Access user here
-
-  const getDefaultBranch = (user: User | null): string[] => {
-    if (!user) return [];
-    if ('branch' in user && (user.role === Role.BRANCH_ADMIN || user.role === Role.STAFF)) {
-      return [user.branch.id];
-    }
-    return [];
-  };
-
-  const defaultBranch = getDefaultBranch(user);
-  const form = useForm<UpdateServiceSchema>({
-    resolver: zodResolver(updateServiceSchema),
+function ProviderUpdateDialog({ provider, onOpenChange, ...props }: ProviderUpdateDialogProps) {
+  const form = useForm<UpdateProviderSchema>({
+    resolver: zodResolver(updateProviderSchema),
     values: {
-      name: !service ? '' : service.name,
-      description: !service ? '' : service.description,
-      price: !service ? 0 : service.price,
-      category: !service ? '' : service.category.id,
-      branches: defaultBranch,
+      name: !provider ? '' : provider.name,
+      description: !provider ? '' : provider.description,
     },
   });
-  const { data: categories } = useQuery({
-    queryKey: ['service-categories', 'all'],
-    queryFn: async () => serviceCategoryHttpClient.getAllServiceCategories(),
-  });
-  console.log('categories', categories);
-  console.log('service', service);
-
-  const { data: branches } = useQuery({
-    queryKey: ['branchs', 'all'],
-    queryFn: async () => branchHttpClient.getAllBranches(),
-  });
-  console.log('branches', branches);
 
   const queryClient = useQueryClient();
-  const { mutateAsync: triggerUpdateService } = useMutation({
-    mutationFn: providerHttpClient.updateProvider(service?.id ?? ''),
+  const { mutateAsync: triggerUpdateProvider } = useMutation({
+    mutationFn: providerHttpClient.updateProvider(provider?.id ?? ''),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['services', 'all'] });
-      toast.success('Service updated successfully!');
+      await queryClient.invalidateQueries({ queryKey: ['providers', 'all'] });
+      toast.success('Provider updated successfully!');
       handleOpenChange(false);
     },
   });
 
   const handleSubmit = async (payload: UpdateProviderSchema) => {
-    await triggerUpdateService(payload);
+    await triggerUpdateProvider(payload);
   };
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       form.reset();
     }
+
     onOpenChange?.(open);
   };
 
@@ -311,7 +295,7 @@ function ServiceUpdateDialog({ service, onOpenChange, ...props }: ServiceUpdateD
     <Dialog onOpenChange={handleOpenChange} {...props}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit provider</DialogTitle>
+          <DialogTitle>Edit provider info</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form className="grid grid-cols-2 gap-4" onSubmit={form.handleSubmit(handleSubmit)}>
@@ -349,46 +333,34 @@ function ServiceUpdateDialog({ service, onOpenChange, ...props }: ServiceUpdateD
   );
 }
 
-function ServiceCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dialog>) {
-  const { user } = useAuth(); // Access user here
-
-  const defaultBranch = useMemo(() => {
-    if (!user) return []; // Handle null case
-    if ('branch' in user && (user.role === Role.BRANCH_ADMIN || user.role === Role.STAFF)) {
-      return [user.branch.id]; // Default to user's branch
-    }
-    return []; // Empty for OWNER or GUEST
-  }, [user]);
-
-  const form = useForm<CreateServiceSchema>({
-    resolver: zodResolver(createServiceSchema),
+function ProviderCreateDialog({ onOpenChange, ...props }: ComponentProps<typeof Dialog>) {
+  const form = useForm<CreateProviderSchema>({
+    resolver: zodResolver(createProviderSchema),
     values: {
       name: '',
       description: '',
-      price: 0,
-      category: '',
-      branches: defaultBranch,
     },
   });
 
   const queryClient = useQueryClient();
-  const { mutateAsync: triggerCreateService } = useMutation({
-    mutationFn: (payload: CreateServiceSchema) => providerHttpClient.createNewProvider(payload),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['services', 'all'] });
-      toast.success('Service created successfully!');
+  const { mutateAsync: triggerUpdateProvider } = useMutation({
+    mutationFn: (payload: CreateProviderSchema) => providerHttpClient.createNewProvider(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['providers', 'all'] });
+      toast.success('Provider created successfully!');
       handleOpenChange(false);
     },
   });
 
-  const handleSubmit = async (values: CreateServiceSchema) => {
-    await triggerCreateService(values);
+  const handleSubmit = async (values: CreateProviderSchema) => {
+    await triggerUpdateProvider(values);
   };
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       form.reset();
     }
+
     onOpenChange?.(open);
   };
 
